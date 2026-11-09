@@ -1,0 +1,33 @@
+// Test-project config for LIVE generation (GEN-L1/GEN-L3): real port 38917 and the real .secrets/token,
+// so the user's Volt reader reconnects to this OpenCode-launched bridge. .opencode/opencode.json is unchanged.
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["C:\\path\\to\\rift\\AGENT_INSTRUCTIONS.md"],
+  "agents": {
+    "volt-gen": {
+      "description": "Headless volt-bridge script generation under test (live)",
+      "mode": "primary",
+      "model": "openai/gpt-6.1-sol",
+      "permissions": [
+        { "action": "Roblox_Studio_*", "resource": "*", "effect": "deny" },
+        { "action": "opencode_list_mcp_resources", "resource": "Roblox_Studio", "effect": "deny" },
+        { "action": "opencode_read_mcp_resource", "resource": "Roblox_Studio:*", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" },
+        { "action": "claude-mem_*", "resource": "*", "effect": "deny" },
+        { "action": "blender_*", "resource": "*", "effect": "deny" },
+        { "action": "higgsfield_*", "resource": "*", "effect": "deny" }
+      ]
+    }
+  },
+  "mcp": {
+    "servers": {
+      "volt": {
+        "type": "local",
+        "command": ["node", "C:\\path\\to\\rift\\dist\\index.js"],
+        "cwd": "C:\\path\\to\\rift",
+        "environment": { "VOLT_BRIDGE_PORT": "38917" },
+        "timeout": { "execution": 90000 }
+      }
+    }
+  }
+}

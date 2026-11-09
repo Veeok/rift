@@ -1,0 +1,37 @@
+// Test-project config for the GEN (AI script generation) suite. Mock world, port 38941, test token.
+// Only sessions started in this directory load it; .opencode/opencode.json is not changed.
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["C:\\path\\to\\rift\\AGENT_INSTRUCTIONS.md"],
+  "agents": {
+    "volt-gen": {
+      "description": "Headless volt-bridge script generation under test",
+      "mode": "primary",
+      // Owner-approved test pin; global/default agents remain unchanged.
+      "model": "openai/gpt-6.1-sol",
+      "permissions": [
+        { "action": "Roblox_Studio_*", "resource": "*", "effect": "deny" },
+        { "action": "opencode_list_mcp_resources", "resource": "Roblox_Studio", "effect": "deny" },
+        { "action": "opencode_read_mcp_resource", "resource": "Roblox_Studio:*", "effect": "deny" },
+        { "action": "subagent", "resource": "*", "effect": "deny" },
+        { "action": "claude-mem_*", "resource": "*", "effect": "deny" },
+        { "action": "blender_*", "resource": "*", "effect": "deny" },
+        { "action": "higgsfield_*", "resource": "*", "effect": "deny" }
+      ]
+    }
+  },
+  "mcp": {
+    "servers": {
+      "volt": {
+        "type": "local",
+        "command": ["node", "C:\\path\\to\\rift\\dist\\index.js"],
+        "cwd": "C:\\path\\to\\rift",
+        "environment": {
+          "VOLT_BRIDGE_PORT": "38941",
+          "VOLT_BRIDGE_TOKEN_FILE": "C:\\path\\to\\rift\\test\\.tmp\\token"
+        },
+        "timeout": { "execution": 90000 }
+      }
+    }
+  }
+}

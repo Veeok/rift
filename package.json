@@ -1,0 +1,27 @@
+{
+  "name": "volt-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local read-only bridge between a Volt-executed Luau reader and OpenCode (MCP stdio).",
+  "type": "module",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=20.12.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "setup": "node dist/setup.js",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "ws": "8.22.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "@types/ws": "8.18.2",
+    "typescript": "7.0.2"
+  }
+}

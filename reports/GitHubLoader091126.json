@@ -1,0 +1,2167 @@
+{
+  "notice": "Fresh automated evidence for local .env and getgenv/public-reader changes. Historical 124/124 is not renewed: AI generation and real Volt compatibility for this revision have not been rerun.",
+  "readerBuild": "132435da88d8",
+  "automatedPassed": 108,
+  "automatedTotal": 108,
+  "liveGitHubLoader": "not yet tested in Volt",
+  "suites": [
+    {
+      "suite": "mock",
+      "revision": "233d8e5ed15447f7",
+      "tests": [
+        {
+          "id": "SET-01",
+          "status": "pass",
+          "expected": "npm run build exits 0 with no diagnostics",
+          "assertions": [
+            {
+              "name": "exit code 0",
+              "pass": true
+            },
+            {
+              "name": "no TS diagnostics",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SET-02",
+          "status": "pass",
+          "expected": "setup creates a fresh token (43-char base64url) in a new token file; rendered bootstrap has no placeholders, the token and the URL ws://127.0.0.1:<port>/volt",
+          "assertions": [
+            {
+              "name": "exit 0",
+              "pass": true
+            },
+            {
+              "name": "reports created",
+              "pass": true
+            },
+            {
+              "name": "token is 43-char base64url",
+              "pass": true
+            },
+            {
+              "name": "bootstrap contains token",
+              "pass": true
+            },
+            {
+              "name": "bootstrap url default",
+              "pass": true
+            },
+            {
+              "name": "no placeholders",
+              "pass": true
+            },
+            {
+              "name": "build stamp = template sha256 prefix",
+              "pass": true
+            },
+            {
+              "name": "second run reuses token",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SET-03",
+          "status": "pass",
+          "expected": "--port 40123 renders ws://127.0.0.1:40123/volt; --port 80 exits non-zero with a range error",
+          "assertions": [
+            {
+              "name": "exit 0",
+              "pass": true
+            },
+            {
+              "name": "url uses 40123",
+              "pass": true
+            },
+            {
+              "name": "invalid port exits non-zero",
+              "pass": true
+            },
+            {
+              "name": "range error message",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SET-04",
+          "status": "pass",
+          "expected": "protocolVersion 2025-11-25, serverInfo.name volt-bridge, instructions mention untrusted data and never embedding ids",
+          "assertions": [
+            {
+              "name": "protocol 2025-11-25",
+              "pass": true
+            },
+            {
+              "name": "serverInfo volt-bridge",
+              "pass": true
+            },
+            {
+              "name": "instructions mention untrusted",
+              "pass": true
+            },
+            {
+              "name": "instructions forbid embedding ids",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SET-05",
+          "status": "pass",
+          "expected": "tools/list = {get_status,list_children,search_instances,inspect_instance,list_scripts,read_script}, each readOnlyHint=true, destructiveHint=false",
+          "assertions": [
+            {
+              "name": "exactly six expected tools",
+              "pass": true
+            },
+            {
+              "name": "all readOnlyHint",
+              "pass": true
+            },
+            {
+              "name": "none destructive",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SET-07",
+          "status": "pass",
+          "expected": "listener accepts on 127.0.0.1; the same port on a non-loopback local IPv4 refuses; OS shows local address 127.0.0.1",
+          "assertions": [
+            {
+              "name": "loopback accepts",
+              "pass": true
+            },
+            {
+              "name": "non-loopback interface available",
+              "pass": true
+            },
+            {
+              "name": "non-loopback refuses",
+              "pass": true
+            },
+            {
+              "name": "OS listener local address is 127.0.0.1 only",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REQ-11",
+          "status": "pass",
+          "expected": "fresh bridge: get_status without args waits until a reader that connects 4 s later is authenticated (3-10 s); waitForReaderMs 0 answers at once; 3000 waits ~3 s; no wait when connected",
+          "assertions": [
+            {
+              "name": "waitForReaderMs 0: immediate, not connected",
+              "pass": true
+            },
+            {
+              "name": "waitForReaderMs 3000: waited ~3 s, not connected",
+              "pass": true
+            },
+            {
+              "name": "automatic startup wait returns connected",
+              "pass": true
+            },
+            {
+              "name": "waited until the reader arrived (3-10 s)",
+              "pass": true
+            },
+            {
+              "name": "no wait when already connected",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REQ-01",
+          "status": "pass",
+          "expected": "list_children without reader -> isError, code not_connected, retryable=true",
+          "assertions": [
+            {
+              "name": "isError",
+              "pass": true
+            },
+            {
+              "name": "code not_connected",
+              "pass": true
+            },
+            {
+              "name": "retryable",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AUTH-01",
+          "status": "pass",
+          "expected": "auth_ok with connectionId and session; get_status connected=true with that session, place and executor",
+          "assertions": [
+            {
+              "name": "auth_ok",
+              "pass": true
+            },
+            {
+              "name": "connectionId present",
+              "pass": true
+            },
+            {
+              "name": "session echoed",
+              "pass": true
+            },
+            {
+              "name": "status connected",
+              "pass": true
+            },
+            {
+              "name": "status session",
+              "pass": true
+            },
+            {
+              "name": "status place/executor",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AUTH-02",
+          "status": "pass",
+          "expected": "auth_fail code bad_token fatal=true; socket closed with 4001; get_status connected=false",
+          "assertions": [
+            {
+              "name": "bad_token",
+              "pass": true
+            },
+            {
+              "name": "fatal",
+              "pass": true
+            },
+            {
+              "name": "close 4001",
+              "pass": true
+            },
+            {
+              "name": "not connected",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AUTH-03",
+          "status": "pass",
+          "expected": "auth_fail auth_required and socket closed; no request processed",
+          "assertions": [
+            {
+              "name": "auth_required",
+              "pass": true
+            },
+            {
+              "name": "socket closed",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AUTH-04",
+          "status": "pass",
+          "expected": "no auth within 5 s -> auth_fail auth_timeout, socket closed within 7 s",
+          "assertions": [
+            {
+              "name": "auth_timeout",
+              "pass": true
+            },
+            {
+              "name": "closed within 7 s",
+              "pass": true
+            },
+            {
+              "name": "closed after ~5 s",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AUTH-05",
+          "status": "pass",
+          "expected": "auth with v=2 -> auth_fail protocol_mismatch fatal=true",
+          "assertions": [
+            {
+              "name": "protocol_mismatch",
+              "pass": true
+            },
+            {
+              "name": "fatal",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AUTH-06",
+          "status": "pass",
+          "expected": "auth with a wrong nonce -> auth_fail bad_nonce",
+          "assertions": [
+            {
+              "name": "bad_nonce",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AUTH-07",
+          "status": "pass",
+          "expected": "upgrade with Origin http://evil.example is closed with 1008 before any hello",
+          "assertions": [
+            {
+              "name": "closed 1008",
+              "pass": true
+            },
+            {
+              "name": "no hello",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AUTH-08",
+          "status": "pass",
+          "expected": "upgrade on /other is not accepted (socket destroyed, no hello)",
+          "assertions": [
+            {
+              "name": "not opened / errored",
+              "pass": true
+            },
+            {
+              "name": "no messages",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AUTH-09",
+          "status": "pass",
+          "expected": "different session while first answers pings -> auth_fail reader_busy fatal; first reader still active",
+          "assertions": [
+            {
+              "name": "first authenticated",
+              "pass": true
+            },
+            {
+              "name": "second reader_busy",
+              "pass": true
+            },
+            {
+              "name": "busy is fatal",
+              "pass": true
+            },
+            {
+              "name": "first still active",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REQ-02",
+          "status": "pass",
+          "expected": "reader never answers -> deadline_exceeded after 15 s (14-18 s)",
+          "assertions": [
+            {
+              "name": "deadline_exceeded",
+              "pass": true
+            },
+            {
+              "name": "after 14-18 s",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REQ-03",
+          "status": "pass",
+          "expected": "5 concurrent calls answered in reverse order each receive their own result; ids unique",
+          "assertions": [
+            {
+              "name": "5 requests seen",
+              "pass": true
+            },
+            {
+              "name": "ids unique",
+              "pass": true
+            },
+            {
+              "name": "each call got its own result",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REQ-04",
+          "status": "pass",
+          "expected": "reader error code not_found surfaces as tool error code not_found with message",
+          "assertions": [
+            {
+              "name": "isError",
+              "pass": true
+            },
+            {
+              "name": "code not_found",
+              "pass": true
+            },
+            {
+              "name": "message kept",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REQ-05",
+          "status": "pass",
+          "expected": "16 requests in flight -> 17th returns queue_full immediately",
+          "assertions": [
+            {
+              "name": "16 in flight at reader",
+              "pass": true
+            },
+            {
+              "name": "17th queue_full",
+              "pass": true
+            },
+            {
+              "name": "immediate (<1 s)",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REQ-07",
+          "status": "pass",
+          "expected": "list_children limit=500 and search maxVisited=100001 rejected by input validation; reader receives no request",
+          "assertions": [
+            {
+              "name": "limit 500 rejected",
+              "pass": true
+            },
+            {
+              "name": "maxVisited 100001 rejected",
+              "pass": true
+            },
+            {
+              "name": "reader received nothing",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REQ-08",
+          "status": "pass",
+          "expected": "id with another session prefix -> stale_object_id without a reader round trip",
+          "assertions": [
+            {
+              "name": "stale_object_id",
+              "pass": true
+            },
+            {
+              "name": "no round trip",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REQ-09",
+          "status": "pass",
+          "expected": "res/chunk for unknown ids do not disturb the connection; next call succeeds",
+          "assertions": [
+            {
+              "name": "still connected",
+              "pass": true
+            },
+            {
+              "name": "next call ok",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REQ-10",
+          "status": "pass",
+          "expected": "malformed text after auth is dropped; connection stays up; next call succeeds",
+          "assertions": [
+            {
+              "name": "still connected",
+              "pass": true
+            },
+            {
+              "name": "next call ok",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REC-03",
+          "status": "pass",
+          "expected": "reader disconnects with a request in flight -> tool returns disconnected within 2 s",
+          "assertions": [
+            {
+              "name": "disconnected",
+              "pass": true
+            },
+            {
+              "name": "within 2 s",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REC-09",
+          "status": "pass",
+          "expected": "active reader that stops answering is replaced by a new session after the 3 s probe; old closed 4006",
+          "assertions": [
+            {
+              "name": "new reader accepted",
+              "pass": true
+            },
+            {
+              "name": "after probe (>=3 s)",
+              "pass": true
+            },
+            {
+              "name": "old closed 4006",
+              "pass": true
+            },
+            {
+              "name": "new session active",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REC-10",
+          "status": "pass",
+          "expected": "second transport with the same session replaces the first (old closed 4005), session continues",
+          "assertions": [
+            {
+              "name": "second transport accepted",
+              "pass": true
+            },
+            {
+              "name": "old closed 4005",
+              "pass": true
+            },
+            {
+              "name": "same session active",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AST-10",
+          "status": "pass",
+          "expected": "oversized list -> trimmed to <=120000 chars with partial=true, partialReason response_size, nextOffset=offset+items",
+          "assertions": [
+            {
+              "name": "ok",
+              "pass": true
+            },
+            {
+              "name": "<= 120000 chars",
+              "pass": true
+            },
+            {
+              "name": "partial response_size",
+              "pass": true
+            },
+            {
+              "name": "nextOffset = offset + items",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SET-08",
+          "status": "pass",
+          "expected": "with the port occupied get_status.listener = error/EADDRINUSE with fix text while MCP keeps serving; after release state becomes listening within 20 s",
+          "assertions": [
+            {
+              "name": "state error",
+              "pass": true
+            },
+            {
+              "name": "code EADDRINUSE",
+              "pass": true
+            },
+            {
+              "name": "explains fix",
+              "pass": true
+            },
+            {
+              "name": "MCP still serves",
+              "pass": true
+            },
+            {
+              "name": "listening after release within 20 s",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SET-09",
+          "status": "pass",
+          "expected": "get_status.listener.state=disabled with reason naming the token file; tools/list still works; port closed",
+          "assertions": [
+            {
+              "name": "state disabled",
+              "pass": true
+            },
+            {
+              "name": "reason names token file",
+              "pass": true
+            },
+            {
+              "name": "tools/list works",
+              "pass": true
+            },
+            {
+              "name": "port closed",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SET-11",
+          "status": "pass",
+          "expected": "opencode.example.jsonc parses as JSONC; mcp.servers.volt is type local with node command, disabled false, no model/provider keys; .opencode/opencode.json unchanged by the project (mtime before project start, no volt entries; git cannot show it because .opencode/ is untracked)",
+          "assertions": [
+            {
+              "name": "parses as JSONC",
+              "pass": true
+            },
+            {
+              "name": "type local",
+              "pass": true
+            },
+            {
+              "name": "node command to dist/index.js",
+              "pass": true
+            },
+            {
+              "name": "disabled false",
+              "pass": true
+            },
+            {
+              "name": "no model/provider keys",
+              "pass": true
+            },
+            {
+              "name": "instructions array",
+              "pass": true
+            },
+            {
+              "name": ".opencode/opencode.json last modified before the bridge project existed",
+              "pass": true
+            },
+            {
+              "name": ".opencode/opencode.json has no volt entries",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SET-06",
+          "status": "pass",
+          "expected": "every stdout line of a session with successes and errors parses as JSON-RPC 2.0; diagnostics present on stderr",
+          "assertions": [
+            {
+              "name": "lines captured",
+              "pass": true
+            },
+            {
+              "name": "all lines JSON-RPC 2.0",
+              "pass": true
+            },
+            {
+              "name": "diagnostics on stderr",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SET-10",
+          "status": "pass",
+          "expected": "process exits 0 within 5 s, reader receives bye, port is closed afterwards",
+          "assertions": [
+            {
+              "name": "exit 0",
+              "pass": true
+            },
+            {
+              "name": "within 5 s",
+              "pass": true
+            },
+            {
+              "name": "reader got bye",
+              "pass": true
+            },
+            {
+              "name": "port closed",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "OBJ-01",
+          "status": "pass",
+          "expected": "list_children(game) includes Workspace/Players/ReplicatedStorage with session-prefixed ids, className, path, hasChildren, observedAt, session",
+          "assertions": [
+            {
+              "name": "connected to real reader",
+              "pass": true
+            },
+            {
+              "name": "services listed",
+              "pass": true
+            },
+            {
+              "name": "session-prefixed ids",
+              "pass": true
+            },
+            {
+              "name": "className/path",
+              "pass": true
+            },
+            {
+              "name": "hasChildren",
+              "pass": true
+            },
+            {
+              "name": "observedAt + session",
+              "pass": true
+            },
+            {
+              "name": "reader reports the current build",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "OBJ-02",
+          "status": "pass",
+          "expected": "250 children with limit 100 -> 100/100/50, nextOffset 100/200/none, hasMore t/t/f, 250 unique ids",
+          "assertions": [
+            {
+              "name": "sizes 100/100/50",
+              "pass": true
+            },
+            {
+              "name": "nextOffset 100/200/none",
+              "pass": true
+            },
+            {
+              "name": "hasMore t/t/f",
+              "pass": true
+            },
+            {
+              "name": "total 250",
+              "pass": true
+            },
+            {
+              "name": "250 unique ids",
+              "pass": true
+            },
+            {
+              "name": "P001..P250 order",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "OBJ-03",
+          "status": "pass",
+          "expected": "two 'Door.1' children both flagged duplicateName with distinct ids",
+          "assertions": [
+            {
+              "name": "two Door.1",
+              "pass": true
+            },
+            {
+              "name": "both flagged duplicateName",
+              "pass": true
+            },
+            {
+              "name": "distinct ids",
+              "pass": true
+            },
+            {
+              "name": "unique siblings not flagged",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "OBJ-04",
+          "status": "pass",
+          "expected": "path ['Workspace','Map','Door.1'] resolves to Door.1 (not split); name with quotes/brackets/newline has escaped path and resolves by exact segment",
+          "assertions": [
+            {
+              "name": "Door.1 resolved whole",
+              "pass": true
+            },
+            {
+              "name": "Door.1 path bracketed",
+              "pass": true
+            },
+            {
+              "name": "weird resolved",
+              "pass": true
+            },
+            {
+              "name": "weird path escaped",
+              "pass": true
+            },
+            {
+              "name": "segments exact",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "OBJ-05",
+          "status": "pass",
+          "expected": "missing segment -> not_found naming segment 2",
+          "assertions": [
+            {
+              "name": "not_found",
+              "pass": true
+            },
+            {
+              "name": "names segment 2",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "OBJ-06",
+          "status": "pass",
+          "expected": "contains 'door' (ci) under Workspace.Map -> 2; exact 'Door.1' cs -> 2; prefix 'P00' under Many -> 9",
+          "assertions": [
+            {
+              "name": "contains ci -> 2",
+              "pass": true
+            },
+            {
+              "name": "exact cs -> 2",
+              "pass": true
+            },
+            {
+              "name": "exact cs wrong case -> 0",
+              "pass": true
+            },
+            {
+              "name": "prefix -> 9",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "OBJ-07",
+          "status": "pass",
+          "expected": "className BasePart isa under Map finds Frame, Lamp, Statue, PlainNote parts; classMatch exact BasePart -> 0",
+          "assertions": [
+            {
+              "name": "isa finds parts incl MeshPart",
+              "pass": true
+            },
+            {
+              "name": "no non-parts",
+              "pass": true
+            },
+            {
+              "name": "exact BasePart -> 0",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "OBJ-08",
+          "status": "pass",
+          "expected": "maxDepth 10 under Deep cannot reach Bottom; maxVisited 5 -> partial=true reason max_visited, visited=5",
+          "assertions": [
+            {
+              "name": "depth 10 cannot reach Bottom",
+              "pass": true
+            },
+            {
+              "name": "depth 64 reaches Bottom",
+              "pass": true
+            },
+            {
+              "name": "maxVisited partial",
+              "pass": true
+            },
+            {
+              "name": "visited 5",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "OBJ-09",
+          "status": "pass",
+          "expected": "Parts under Many pages of 100: 100/100/50, disjoint, hasMore t/t/f",
+          "assertions": [
+            {
+              "name": "sizes 100/100/50",
+              "pass": true
+            },
+            {
+              "name": "disjoint",
+              "pass": true
+            },
+            {
+              "name": "hasMore t/t/f",
+              "pass": true
+            },
+            {
+              "name": "nextOffset 100/200",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "OBJ-10",
+          "status": "pass",
+          "expected": "className Decal on Frame -> [Sign]; BasePart on Map -> 3 items",
+          "assertions": [
+            {
+              "name": "Decal -> [Sign]",
+              "pass": true
+            },
+            {
+              "name": "BasePart on Map -> 3",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SER-01",
+          "status": "pass",
+          "expected": "Vector3 {t,x,y,z}=(1,2,3), Vector2 (4,5), Vector3int16 tagged",
+          "assertions": [
+            {
+              "name": "Vector3",
+              "pass": true
+            },
+            {
+              "name": "Vector2",
+              "pass": true
+            },
+            {
+              "name": "Vector3int16",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SER-02",
+          "status": "pass",
+          "expected": "CFrame tagged with 12 components [1,2,3,1,0,0,0,1,0,0,0,1]",
+          "assertions": [
+            {
+              "name": "CFrame components",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SER-03",
+          "status": "pass",
+          "expected": "Color3 r=1 g=0 b=0 hex ff0000; BrickColor name 'Bright red' number 21",
+          "assertions": [
+            {
+              "name": "Color3",
+              "pass": true
+            },
+            {
+              "name": "hex ff0000",
+              "pass": true
+            },
+            {
+              "name": "BrickColor",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SER-04",
+          "status": "pass",
+          "expected": "UDim {0.5,10}; UDim2 x{0.1,1} y{0.2,2}; Rect min(1,2) max(3,4); NumberRange 1..5",
+          "assertions": [
+            {
+              "name": "UDim",
+              "pass": true
+            },
+            {
+              "name": "UDim2",
+              "pass": true
+            },
+            {
+              "name": "Rect",
+              "pass": true
+            },
+            {
+              "name": "NumberRange",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SER-05",
+          "status": "pass",
+          "expected": "Material.Neon -> {t:EnumItem, enum:'Material', name:'Neon', value:288}",
+          "assertions": [
+            {
+              "name": "EnumItem",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SER-06",
+          "status": "pass",
+          "expected": "Ref -> {t:Instance, className:Part, name:Frame, id}; id resolves via inspect_instance",
+          "assertions": [
+            {
+              "name": "Instance tag",
+              "pass": true
+            },
+            {
+              "name": "id resolves",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SER-07",
+          "status": "pass",
+          "expected": "NaN/inf/-inf tagged {t:number, v:'nan'|'inf'|'-inf'}",
+          "assertions": [
+            {
+              "name": "nan",
+              "pass": true
+            },
+            {
+              "name": "inf",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SER-08",
+          "status": "pass",
+          "expected": "invalid UTF-8 -> lossy=true with \\xFF; 5000-char string with maxStringLength 500 -> truncated=true length=5000 v.length=500",
+          "assertions": [
+            {
+              "name": "lossy",
+              "pass": true
+            },
+            {
+              "name": "truncated long",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SER-09",
+          "status": "pass",
+          "expected": "nested table beyond maxTableDepth 2 -> omitted:'depth'; 80-entry table -> 50 entries + truncated=true",
+          "assertions": [
+            {
+              "name": "depth omitted at level 2",
+              "pass": true
+            },
+            {
+              "name": "big table 50 entries + truncated",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SER-10",
+          "status": "pass",
+          "expected": "unreadable property listed in unreadableProperties while others return; getproperties failure -> errors[] entry, object still described",
+          "assertions": [
+            {
+              "name": "Secret unreadable",
+              "pass": true
+            },
+            {
+              "name": "Vec3 still returned",
+              "pass": true
+            },
+            {
+              "name": "getproperties failure reported",
+              "pass": true
+            },
+            {
+              "name": "object still described",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "SER-11",
+          "status": "pass",
+          "expected": "NumberSequence/ColorSequence keypoints, Font family, PhysicalProperties, Ray, Region3 serialized without serialize_failed; Faces tagged",
+          "assertions": [
+            {
+              "name": "NumberSequence keypoints",
+              "pass": true
+            },
+            {
+              "name": "ColorSequence keypoints",
+              "pass": true
+            },
+            {
+              "name": "Font family",
+              "pass": true
+            },
+            {
+              "name": "PhysicalProperties",
+              "pass": true
+            },
+            {
+              "name": "Ray",
+              "pass": true
+            },
+            {
+              "name": "Region3",
+              "pass": true
+            },
+            {
+              "name": "Faces tagged",
+              "pass": true
+            },
+            {
+              "name": "no serialize_failed",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AST-01",
+          "status": "pass",
+          "expected": "Decal Texture -> assets [{source:property,name:Texture,assetId:'1234567890'}]",
+          "assertions": [
+            {
+              "name": "one asset from Texture",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AST-02",
+          "status": "pass",
+          "expected": "MeshContent Content -> uri rbxassetid://424242 assetId 424242; TextureID assetId 434343",
+          "assertions": [
+            {
+              "name": "Content uri",
+              "pass": true
+            },
+            {
+              "name": "TextureID",
+              "pass": true
+            },
+            {
+              "name": "Content property tagged",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AST-03",
+          "status": "pass",
+          "expected": "attribute HumSound -> {source:attribute, name:HumSound, assetId:'555'}",
+          "assertions": [
+            {
+              "name": "attribute asset",
+              "pass": true
+            },
+            {
+              "name": "Color3 attribute serialized",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AST-04",
+          "status": "pass",
+          "expected": "http://www.roblox.com/asset/?id=987654 -> assetId 987654",
+          "assertions": [
+            {
+              "name": "legacy url id",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AST-05",
+          "status": "pass",
+          "expected": "plain text and https://example.com yield assets=[]",
+          "assertions": [
+            {
+              "name": "assets empty",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AST-06",
+          "status": "pass",
+          "expected": "150 asset attributes -> assets capped at 100; attributeCount=150",
+          "assertions": [
+            {
+              "name": "capped at 100",
+              "pass": true
+            },
+            {
+              "name": "attributeCount 150",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AST-07",
+          "status": "pass",
+          "expected": "properties ['Size','Anchored'] returns exactly those two",
+          "assertions": [
+            {
+              "name": "exactly Size+Anchored",
+              "pass": true
+            },
+            {
+              "name": "values",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AST-08",
+          "status": "pass",
+          "expected": "maxProperties 5 -> shown=5 and omitted>=20 reported",
+          "assertions": [
+            {
+              "name": "shown 5",
+              "pass": true
+            },
+            {
+              "name": "omitted >= 20",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AST-09",
+          "status": "pass",
+          "expected": "Door.1 tags [Door,Interactable], attribute Locked=true; NoAttrs -> attributeCount 0",
+          "assertions": [
+            {
+              "name": "tags",
+              "pass": true
+            },
+            {
+              "name": "Locked attribute",
+              "pass": true
+            },
+            {
+              "name": "NoAttrs count 0",
+              "pass": true
+            },
+            {
+              "name": "pathInfo not unique for duplicate",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "DEC-01",
+          "status": "pass",
+          "expected": "status complete; source block equals the mock source exactly; hash present; className ModuleScript; observedAt + session present",
+          "assertions": [
+            {
+              "name": "complete",
+              "pass": true
+            },
+            {
+              "name": "source exact",
+              "pass": true
+            },
+            {
+              "name": "hash",
+              "pass": true
+            },
+            {
+              "name": "className ModuleScript",
+              "pass": true
+            },
+            {
+              "name": "observedAt + session",
+              "pass": true
+            },
+            {
+              "name": "cache miss first",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "DEC-02",
+          "status": "pass",
+          "expected": "1000-line source in pages of 300 -> nextStartLine 301/601/901/null; pages rebuild the source exactly",
+          "assertions": [
+            {
+              "name": "nextStartLine 301/601/901/null",
+              "pass": true
+            },
+            {
+              "name": "rebuilt exactly",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "DEC-03",
+          "status": "pass",
+          "expected": "15 s decompile with waitMs 2000 -> status pending + jobId; polling with jobId reaches complete with the right source",
+          "assertions": [
+            {
+              "name": "pending",
+              "pass": true
+            },
+            {
+              "name": "completes via polling",
+              "pass": true
+            },
+            {
+              "name": "polled at least 3 times",
+              "pass": true
+            },
+            {
+              "name": "same jobId reported",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "DEC-04",
+          "status": "pass",
+          "expected": "decompile error -> isError code decompile_failed with the Volt message",
+          "assertions": [
+            {
+              "name": "isError",
+              "pass": true
+            },
+            {
+              "name": "decompile_failed",
+              "pass": true
+            },
+            {
+              "name": "message from Volt",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "DEC-05",
+          "status": "pass",
+          "expected": "Legacy Script -> unsupported_script and decompile never called for it; client RunContext Script decompiles",
+          "assertions": [
+            {
+              "name": "unsupported_script",
+              "pass": true
+            },
+            {
+              "name": "decompile never called for ServerThing",
+              "pass": true
+            },
+            {
+              "name": "client RunContext Script decompiles",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "DEC-06",
+          "status": "pass",
+          "expected": "Part target -> not_a_script",
+          "assertions": [
+            {
+              "name": "not_a_script",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "DEC-07",
+          "status": "pass",
+          "expected": "~700 KB multi-byte source transferred in chunks and rebuilt exactly (sha256 match)",
+          "assertions": [
+            {
+              "name": "no error",
+              "pass": true
+            },
+            {
+              "name": "sha256 match",
+              "pass": true
+            },
+            {
+              "name": "multi-page",
+              "pass": true
+            },
+            {
+              "name": "bridge received >= 3 chunks (bytes > 600k)",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "DEC-08",
+          "status": "pass",
+          "expected": "lossyText=true and \\xFF\\xFE escapes in text",
+          "assertions": [
+            {
+              "name": "lossyText",
+              "pass": true
+            },
+            {
+              "name": "escapes",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "DEC-09",
+          "status": "pass",
+          "expected": "options reach DecompilerOptions (SmartVariableRenamer=true, Formatter.IndentWidth=2); different options -> separate cache entry (2 decompiles)",
+          "assertions": [
+            {
+              "name": "complete",
+              "pass": true
+            },
+            {
+              "name": "SmartVariableRenamer applied",
+              "pass": true
+            },
+            {
+              "name": "IndentWidth applied",
+              "pass": true
+            },
+            {
+              "name": "separate cache entry -> 2 decompiles",
+              "pass": true
+            },
+            {
+              "name": "second not a cache hit",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "CAC-01",
+          "status": "pass",
+          "expected": "second read of the same script -> cache.hit=true, decompile count 1",
+          "assertions": [
+            {
+              "name": "cache hit",
+              "pass": true
+            },
+            {
+              "name": "decompiled once",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "CAC-02",
+          "status": "pass",
+          "expected": "new bytecode hash -> cache miss, new source, decompile count 2",
+          "assertions": [
+            {
+              "name": "miss",
+              "pass": true
+            },
+            {
+              "name": "new source",
+              "pass": true
+            },
+            {
+              "name": "new hash",
+              "pass": true
+            },
+            {
+              "name": "decompile count 2",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "CAC-03",
+          "status": "pass",
+          "expected": "nil hash -> hashAvailable=false, keyedBy nohash, second read hits; entry expires after 5 min (clock-advanced unit check)",
+          "assertions": [
+            {
+              "name": "hashAvailable false",
+              "pass": true
+            },
+            {
+              "name": "keyedBy nohash",
+              "pass": true
+            },
+            {
+              "name": "second read hits",
+              "pass": true
+            },
+            {
+              "name": "unit: fresh nohash entry hit",
+              "pass": true
+            },
+            {
+              "name": "unit: expired after 6 min",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "CAC-04",
+          "status": "pass",
+          "expected": "refresh=true -> cache.hit=false and decompile count increments",
+          "assertions": [
+            {
+              "name": "refresh miss",
+              "pass": true
+            },
+            {
+              "name": "count +2",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "CAC-05",
+          "status": "pass",
+          "expected": "3 concurrent reads complete; reader never runs more than 1 decompile at once",
+          "assertions": [
+            {
+              "name": "all complete",
+              "pass": true
+            },
+            {
+              "name": "reader max 1 concurrent decompile",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "CAC-06",
+          "status": "pass",
+          "expected": "2 concurrent reads of one script -> 1 decompile, both complete",
+          "assertions": [
+            {
+              "name": "both complete",
+              "pass": true
+            },
+            {
+              "name": "one decompile",
+              "pass": true
+            },
+            {
+              "name": "same job",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "CAC-08",
+          "status": "pass",
+          "expected": "loaded/running/className filters correct; added script appears only after refresh=true; includeHash returns hashes",
+          "assertions": [
+            {
+              "name": "loaded filter",
+              "pass": true
+            },
+            {
+              "name": "running filter",
+              "pass": true
+            },
+            {
+              "name": "className filter",
+              "pass": true
+            },
+            {
+              "name": "not visible before refresh",
+              "pass": true
+            },
+            {
+              "name": "visible after refresh",
+              "pass": true
+            },
+            {
+              "name": "includeHash",
+              "pass": true
+            },
+            {
+              "name": "server Script marked unsupported",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "CAC-07",
+          "status": "pass",
+          "expected": "9 concurrent distinct reads -> 8 pending jobs + 1 queue_full",
+          "assertions": [
+            {
+              "name": "8 pending",
+              "pass": true
+            },
+            {
+              "name": "1 queue_full",
+              "pass": true
+            },
+            {
+              "name": "queued jobs eventually complete",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REC-01",
+          "status": "pass",
+          "expected": "after bridge restart the reader re-authenticates within 20 s with the same session over the same Volt socket object (connectCalls unchanged, reconnects>=1)",
+          "assertions": [
+            {
+              "name": "reconnected within 20 s",
+              "pass": true
+            },
+            {
+              "name": "same session",
+              "pass": true
+            },
+            {
+              "name": "same Volt socket object (no new connect)",
+              "pass": true
+            },
+            {
+              "name": "Volt auto-reconnect used",
+              "pass": true
+            },
+            {
+              "name": "live sockets 1",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REC-02",
+          "status": "pass",
+          "expected": "id obtained before the restart resolves after it",
+          "assertions": [
+            {
+              "name": "old id resolves",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REC-07",
+          "status": "pass",
+          "expected": "frozen reader dropped within 45 s with reason heartbeat timeout; unfrozen reader reconnects and reauths within 20 s",
+          "assertions": [
+            {
+              "name": "dropped within 45 s",
+              "pass": true
+            },
+            {
+              "name": "reason heartbeat timeout",
+              "pass": true
+            },
+            {
+              "name": "recovered within 20 s",
+              "pass": true
+            },
+            {
+              "name": "same session after recovery",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REC-04",
+          "status": "pass",
+          "expected": "re-run -> generation 2, new session active, exactly 2 handlers connected and 1 live socket",
+          "assertions": [
+            {
+              "name": "new session active",
+              "pass": true
+            },
+            {
+              "name": "generation 2",
+              "pass": true
+            },
+            {
+              "name": "exactly 2 handlers connected",
+              "pass": true
+            },
+            {
+              "name": "1 live socket",
+              "pass": true
+            },
+            {
+              "name": "old reader logged replacement",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REC-05",
+          "status": "pass",
+          "expected": "pre-re-run id -> stale_object_id",
+          "assertions": [
+            {
+              "name": "old id stale",
+              "pass": true
+            },
+            {
+              "name": "session really changed",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "CAC-09",
+          "status": "pass",
+          "expected": "after bootstrap re-run the same script decompiles again",
+          "assertions": [
+            {
+              "name": "miss in new session",
+              "pass": true
+            },
+            {
+              "name": "decompiled again",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "DEC-10",
+          "status": "pass",
+          "expected": "require never called; decompile called only for scripts explicitly requested",
+          "assertions": [
+            {
+              "name": "require never called",
+              "pass": true
+            },
+            {
+              "name": "only requested scripts decompiled",
+              "pass": true
+            },
+            {
+              "name": "NewMod never decompiled (listed only)",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REC-08",
+          "status": "pass",
+          "expected": "auto-reconnect off + transport killed -> reader replaces its socket after the grace period (5 s override), connectCalls=2, maxLiveSockets=1, connected again",
+          "assertions": [
+            {
+              "name": "reconnected by socket replacement",
+              "pass": true
+            },
+            {
+              "name": "after grace (>=4 s)",
+              "pass": true
+            },
+            {
+              "name": "connectCalls 2",
+              "pass": true
+            },
+            {
+              "name": "maxLiveSockets 1",
+              "pass": true
+            },
+            {
+              "name": "replacement logged",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AUTH-10",
+          "status": "pass",
+          "expected": "Luau reader with a wrong token logs authentication failed, shuts down, and makes no further connect or reconnect attempts for 20 s",
+          "assertions": [
+            {
+              "name": "reader shut down",
+              "pass": true
+            },
+            {
+              "name": "auth failure logged",
+              "pass": true
+            },
+            {
+              "name": "no further connect calls in 20 s",
+              "pass": true
+            },
+            {
+              "name": "no Volt auto-reconnects",
+              "pass": true
+            },
+            {
+              "name": "no live socket",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REC-06",
+          "status": "pass",
+          "expected": "bridge down (observed 20 s): >=3 sequential connect failures with increasing backoff gaps, one warning, no live socket; bridge started -> connected within 40 s; maxLiveSockets=1",
+          "assertions": [
+            {
+              "name": "repeated failures while down",
+              "pass": true
+            },
+            {
+              "name": "one sequential connect loop (calls == failures)",
+              "pass": true
+            },
+            {
+              "name": "backoff intervals increase",
+              "pass": true
+            },
+            {
+              "name": "no live socket while down",
+              "pass": true
+            },
+            {
+              "name": "cannot-reach warning logged once",
+              "pass": true
+            },
+            {
+              "name": "connected after bridge start (<=40 s)",
+              "pass": true
+            },
+            {
+              "name": "maxLiveSockets 1",
+              "pass": true
+            },
+            {
+              "name": "backoff bounds attempts (<= 8 in 20 s)",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "REQ-06",
+          "status": "pass",
+          "expected": "real reader answers unknown_op for eval, loadstring, set_property, fire_remote, hook, require; no world writes, no require calls",
+          "assertions": [
+            {
+              "name": "all unknown_op",
+              "pass": true
+            },
+            {
+              "name": "read op still works",
+              "pass": true
+            },
+            {
+              "name": "no require calls",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "CAC-11",
+          "status": "pass",
+          "expected": "17th concurrent request to the real reader -> reader_busy",
+          "assertions": [
+            {
+              "name": "17th reader_busy",
+              "pass": true
+            },
+            {
+              "name": "others still pending",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "CAC-10",
+          "status": "pass",
+          "expected": "deadline -> status wait_expired with text stating Volt's native decompile is not cancelled; late result is cached",
+          "assertions": [
+            {
+              "name": "status wait_expired",
+              "pass": true
+            },
+            {
+              "name": "says native decompile not cancelled",
+              "pass": true
+            },
+            {
+              "name": "does not claim cancellation",
+              "pass": true
+            },
+            {
+              "name": "late result cached",
+              "pass": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "suite": "refinement",
+      "revision": "233d8e5ed15447f7",
+      "tests": [
+        {
+          "id": "AUTH-11",
+          "status": "pass",
+          "expected": "Two concurrent challengers to an unresponsive reader: exactly one auth_ok; the other gets reader_busy",
+          "assertions": [
+            {
+              "name": "only one competing reader received auth_ok",
+              "pass": true
+            },
+            {
+              "name": "exactly one active transport",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AUTH-12",
+          "status": "pass",
+          "expected": "Origin: null closes 1008 before authentication",
+          "assertions": [
+            {
+              "name": "opaque Origin rejected before authentication",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "CAC-12",
+          "status": "pass",
+          "expected": "Changed hash during native work: retryable bytecode_changed failure and no stale-key cache entry",
+          "assertions": [
+            {
+              "name": "changed hash produces a retryable job failure",
+              "pass": true
+            },
+            {
+              "name": "no source cached under stale hash",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "DEC-11",
+          "status": "pass",
+          "expected": "truncated=true from reader becomes partial/source_limit and sourceTruncated on first read and cache hit",
+          "assertions": [
+            {
+              "name": "native source limit is disclosed",
+              "pass": true
+            },
+            {
+              "name": "cache retains disclosure",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "AST-11",
+          "status": "pass",
+          "expected": "Size-trimmed last page has hasMore=true and nextOffset equals number returned",
+          "assertions": [
+            {
+              "name": "trimmed last page still hasMore",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "OBJ-11",
+          "status": "pass",
+          "expected": "A non-leaf depth frontier reports partial/max_depth; a leaf-only frontier remains complete",
+          "assertions": [
+            {
+              "name": "pruned descendants disclosed",
+              "pass": true
+            },
+            {
+              "name": "leaf-only frontier is complete",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "GEN-11",
+          "status": "pass",
+          "expected": "A second generator is refused before model invocation; lease releases/reacquires and both runners use it",
+          "assertions": [
+            {
+              "name": "shared lock implemented",
+              "pass": true
+            },
+            {
+              "name": "second generation fails before any AI call",
+              "pass": true
+            },
+            {
+              "name": "lock reusable after release",
+              "pass": true
+            },
+            {
+              "name": "test/run-gen.mjs refuses overlap before model/network work",
+              "pass": true
+            },
+            {
+              "name": "test/run-live.mjs refuses overlap before model/network work",
+              "pass": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "suite": "loader",
+      "revision": "233d8e5ed15447f7",
+      "tests": [
+        {
+          "id": "ENV-01",
+          "status": "pass",
+          "expected": "Local .env supplies token and port without mutating process env",
+          "assertions": [
+            {
+              "name": "token from .env",
+              "pass": true
+            },
+            {
+              "name": "port from .env",
+              "pass": true
+            },
+            {
+              "name": "no process-wide mutation",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "ENV-02",
+          "status": "pass",
+          "expected": "Explicit process token and explicit token-file override local defaults",
+          "assertions": [
+            {
+              "name": "explicit token wins",
+              "pass": true
+            },
+            {
+              "name": "explicit token file wins over local .env token",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "ENV-03",
+          "status": "pass",
+          "expected": "Invalid environment token fails closed without disclosing it",
+          "assertions": [
+            {
+              "name": "fails closed",
+              "pass": true
+            },
+            {
+              "name": "does not disclose secret",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "ENV-04",
+          "status": "pass",
+          "expected": "Token updates preserve unrelated local environment entries",
+          "assertions": [
+            {
+              "name": "local-token writer exists",
+              "pass": true
+            },
+            {
+              "name": "preserves unrelated entries",
+              "pass": true
+            },
+            {
+              "name": "exactly one token assignment",
+              "pass": true
+            },
+            {
+              "name": "updated port works",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "LOAD-01",
+          "status": "pass",
+          "expected": "getgenv token overrides embedded placeholder and connects loopback",
+          "assertions": [
+            {
+              "name": "runtime token used",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "LOAD-02",
+          "status": "pass",
+          "expected": "Invalid runtime port fails before opening a socket",
+          "assertions": [
+            {
+              "name": "no socket for invalid config",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "LOAD-03",
+          "status": "pass",
+          "expected": "Published generic reader uses local config without embedding a token",
+          "assertions": [
+            {
+              "name": "no local credential in public reader",
+              "pass": true
+            },
+            {
+              "name": "public artifact authenticated from getgenv",
+              "pass": true
+            },
+            {
+              "name": "public reader reports stamped build",
+              "pass": true
+            },
+            {
+              "name": "read-only inspection works through artifact",
+              "pass": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

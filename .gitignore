@@ -1,0 +1,18 @@
+node_modules/
+dist/
+# Connection token and the token-filled bootstrap. Never commit.
+.secrets/
+# Generated Luau scripts and reports (personal, per game).
+exports/
+# Local test runtimes (Lune)
+.tools/
+# Test scratch (test token, live state)
+test/.tmp/
+# Local credentials and private execution evidence (never publish).
+.env
+.env.*
+!.env.example
+.publication/
+test/results/
+VoltResults*.json
+RefinementResults*.json

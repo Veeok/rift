@@ -1,0 +1,31 @@
+// Example project-local OpenCode V2 configuration for volt-bridge (OpenCode 2.2.6).
+// Merge these keys into the existing C:/LOCAL_USER\RobloxTeam\.opencode\opencode.json:
+//   - add "volt" next to the existing servers under mcp.servers (earshot, context7)
+//   - append the instructions entry to any existing "instructions" array
+// Do not save this as a separate higher-precedence config. A server object with the same name
+// replaces the whole entry, and other keys would override the project settings.
+// No model/provider keys here: OpenCode keeps using your existing model.
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENT_INSTRUCTIONS.md"],
+  "mcp": {
+    "servers": {
+      "volt": {
+        "type": "local",
+        "command": ["node", "C:\\path\\to\\rift\\dist\\index.js"],
+        "cwd": "C:\\path\\to\\rift",
+        "environment": {
+          // Must match the port used by `npm run setup` (default 38917).
+          "VOLT_BRIDGE_PORT": "38917",
+          "VOLT_BRIDGE_LOG_LEVEL": "info"
+        },
+        "timeout": {
+          "startup": 30000,
+          "execution": 90000
+        },
+        // Set to true to keep the server configured but not started.
+        "disabled": false
+      }
+    }
+  }
+}
