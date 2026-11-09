@@ -1,7 +1,7 @@
 # Publication security review
 
-Secrets remain local in ignored .env/.secrets files. The owner-approved public export excludes raw transcripts, reconstructed game source and private observations. It was scanned for local credentials and personal paths before publishing.
+Secrets remain local in ignored .env/.secrets files. The owner-approved public export excludes raw transcripts, reconstructed game source and private observations. The exporter scans local credentials and personal paths before reporting success.
 
-GitHub reported five GoCardless-token alerts in historical report run IDs. Each flagged string was verified to be an automatically generated timestamped live-test identifier backed by a local result file, not an access credential. None matched the bridge or test token. With owner approval, only these five alerts were resolved as false positives. Public history references now use neutral hashes to avoid the misleading format; original private evidence is preserved. No Git history rewrite was performed. Secret scanning and push protection remain enabled.
+GitHub reported five GoCardless-token alerts in historical report run IDs. Those five alerts were investigated and resolved as false positives with owner approval. Public history references use neutral hashes; original private evidence stays local. This export does not re-check GitHub alert or protection settings.
 
-The pinned reader commit is unchanged: b18ac609754e3f690bd13ded367cfac06caf226f. The owner manually executed its GitHub loader and the bridge verified reader build bdbf0a0fc595. Do not publish your token-filled local loader.
+Configured reader pin: b18ac609754e3f690bd13ded367cfac06caf226f. Exported reader build: bdbf0a0fc595. Generating this document does not prove that this pin has been loaded or live-tested; see revision-specific validation evidence. Do not publish your token-filled local loader.
