@@ -249,4 +249,6 @@ CATALOG.push(
 	t('EXEC-01','mock','Execution stays off unless explicitly enabled',['T1'],'Default bridge registers six tools; execute_luau is absent and calls fail',false),
 	t('EXEC-02','mock','Opt-in execution returns output, values and errors',['R27'],'Enabled bridge + exec reader: print captured, return serialized, compile/runtime errors reported, oversize refused, reused runId never re-executes',false),
 	t('EXEC-03','mock','Reader without exec capability is reported, not silently run',['R28'],'Bridge enabled but reader loaded without allowExec: capability absent and calls fail with exec_unavailable',false),
+	t('EXEC-04','mock','Real deadline on a finite yielding chunk',['R35'],'task.wait(3) with a 1 s deadline: status timeout, unknownOutcome/clientMayStillBeRunning true, note says the client may still run and is not cancelled; the late result is dropped and a later run is unaffected',false),
+	t('EXEC-05','mock','setfenv-unavailable capture branch',['R27'],'Executor without setfenv: capture reports none, output is empty, returns still work; re-enabling restores print capture',false),
 );

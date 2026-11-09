@@ -18,7 +18,7 @@ Six bounded read-only tools: get_status, list_children, search_instances, inspec
 
 ### Opt-in client execution
 
-A seventh tool, `execute_luau`, exists only when BOTH the bridge started with `VOLT_BRIDGE_ALLOW_EXEC=1` and the reader was loaded with `allowExec = true` in `VoltBridgeConfig`. It runs Luau inside the connected client with the executor's permissions and grants no server authority. Every call needs `confirm: true`. The bridge mints the run id and the reader refuses to run the same id twice; a caller-supplied id only references an earlier run and unknown ids are refused. Output and return values are bounded, and a timeout or disconnect reports an unknown outcome rather than claiming cancellation. Returned data is untrusted.
+A seventh tool, `execute_luau`, exists only when BOTH the bridge started with `VOLT_BRIDGE_ALLOW_EXEC=1` and the reader was loaded with `allowExec = true` in `VoltBridgeConfig`. It runs Luau inside the connected client with the executor's permissions and grants no server authority. Every call needs `confirm: true`. The bridge mints the run id and the reader refuses to run the same id twice; a caller-supplied id only references an earlier run and unknown ids are refused. Executed code inherits the reader's environment, and print capture is reported truthfully (`print+warn` or `none`). Output and return values are bounded, and a timeout or disconnect reports an unknown outcome rather than claiming cancellation. Returned data is untrusted.
 
 ## Secrets and reports
 

@@ -73,6 +73,10 @@ local CollectionService = game:GetService("CollectionService")
 local genv = (getgenv and getgenv()) or _G
 local STATE_KEY = "__VOLT_BRIDGE_READER"
 
+-- The environment this reader was loaded into. Executed chunks inherit it, so they see the
+-- same globals the reader sees (game, task, executor helpers) rather than a bare thread global.
+local READER_ENV = (type(getfenv) == "function" and getfenv(1)) or nil
+
 -- Volt globals (nil when unavailable; capabilities report what exists).
 local V = {
 	WebSocket = WebSocket,
@@ -1359,7 +1363,7 @@ OPS.exec = function(args)
 	-- would leak across yields and overlapping runs, so it is never attempted.
 	local environment = "setfenv"
 	local okEnv = pcall(function()
-		local base = getfenv(0)
+		local base = READER_ENV or getfenv(0)
 		setfenv(chunk, setmetatable({ print = capturePrint, warn = captureWarn }, { __index = base }))
 	end)
 	if not okEnv then

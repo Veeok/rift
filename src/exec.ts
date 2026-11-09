@@ -38,6 +38,7 @@ export interface ExecOutcome {
 	outputTruncated: boolean;
 	returns: unknown[];
 	environment: string | null;
+	capture: string | null;
 	duplicateOfPreviousRun: boolean;
 	rejectionCode: string | null;
 	note: string;
@@ -129,6 +130,7 @@ export class ExecService {
 			outputTruncated: false,
 			returns: [],
 			environment: null,
+			capture: null,
 			duplicateOfPreviousRun: false,
 			rejectionCode: null,
 			note: "",
@@ -241,6 +243,7 @@ export class ExecService {
 			outcome.outputTruncated = raw.outputTruncated === true;
 			outcome.returns = Array.isArray(returned) ? returned.slice(0, LIMITS.execMaxReturns) : [];
 			outcome.environment = clampText(typeof raw.environment === "string" ? raw.environment : null, 32);
+			outcome.capture = clampText(typeof raw.capture === "string" ? raw.capture : null, 32);
 			outcome.durationMs = typeof raw.durationMs === "number" ? raw.durationMs : null;
 			outcome.completedAt = new Date().toISOString();
 

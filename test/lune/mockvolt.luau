@@ -371,6 +371,10 @@ if process.args[6] then
 	genv.VoltBridgeConfig = serde.decode("json", process.args[6])
 end
 
+-- Simulates an executor without setfenv: the reader's capture falls back to "none".
+local hideSetfenv = false
+local realSetfenv = setfenv
+
 local function makeEnv(extra)
 	local env = {
 		game = game,
@@ -423,6 +427,12 @@ local function makeEnv(extra)
 	end
 	for k, v in pairs(extra or {}) do
 		env[k] = v
+	end
+	env.setfenv = function(...)
+		if hideSetfenv then
+			error("setfenv unavailable (simulated)")
+		end
+		return realSetfenv(...)
 	end
 	return setmetatable(env, { __index = getfenv(1) })
 end
@@ -560,6 +570,9 @@ while true do
 		ctrlReply(ctrlSock, id, { ok = true })
 	elseif cmd.cmd == "freeze" then
 		ctrl.freeze = cmd.on
+		ctrlReply(ctrlSock, id, { ok = true })
+	elseif cmd.cmd == "setfenv" then
+		hideSetfenv = cmd.on == true
 		ctrlReply(ctrlSock, id, { ok = true })
 	elseif cmd.cmd == "kill_socket" then
 		if stats.lastSocket then

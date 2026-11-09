@@ -1222,6 +1222,73 @@ await T("EXEC-03", async (check) => {
 	}
 });
 
+await T("EXEC-04", async (check) => {
+	const port = 38944;
+	const ctrl = 38945;
+	const Be = await startBridge({ port, tokenFile, extraEnv: { VOLT_BRIDGE_ALLOW_EXEC: "1" } });
+	const mv = await startMockVolt({
+		ctrlPort: ctrl,
+		bridgePort: port,
+		token,
+		runtimeConfig: { token, port, allowExec: true },
+		log: (s) => (logs.lune += s),
+	});
+	try {
+		const st = (await Be.call("get_status", { waitForReaderMs: 20000 })).json;
+		check("reader ready with exec", st.connected === true && (st.reader?.capabilities ?? []).includes("exec"), st.reader?.capabilities);
+		const t0 = Date.now();
+		const slow = await Be.call("execute_luau", { source: "task.wait(3) return 'late'", confirm: true, deadlineMs: 1000 }, 20000);
+		const elapsed = Date.now() - t0;
+		check("reports timeout", slow.json?.status === "timeout", slow.json?.status);
+		check("unknown outcome, may still be running", slow.json?.unknownOutcome === true && slow.json?.clientMayStillBeRunning === true);
+		check(
+			"does not claim cancellation",
+			/UNKNOWN/.test(slow.json?.note ?? "") && /does not cancel/.test(slow.json?.note ?? ""),
+			slow.json?.note,
+		);
+		check("deadline honoured", elapsed >= 900 && elapsed < 2900, elapsed);
+		// The yielding chunk finishes after the bridge gave up; its late result must be dropped, not misfiled.
+		await sleep(3500);
+		const after = await Be.call("execute_luau", { source: "print('after timeout') return 'ok'", confirm: true });
+		check(
+			"later run unaffected by the late result",
+			after.json?.status === "completed" && /after timeout/.test(after.json?.output ?? ""),
+			after.json,
+		);
+	} finally {
+		await mv.stop();
+		await Be.stop();
+	}
+});
+
+await T("EXEC-05", async (check) => {
+	const port = 38946;
+	const ctrl = 38947;
+	const Be = await startBridge({ port, tokenFile, extraEnv: { VOLT_BRIDGE_ALLOW_EXEC: "1" } });
+	const mv = await startMockVolt({
+		ctrlPort: ctrl,
+		bridgePort: port,
+		token,
+		runtimeConfig: { token, port, allowExec: true },
+		log: (s) => (logs.lune += s),
+	});
+	try {
+		await Be.call("get_status", { waitForReaderMs: 20000 });
+		await mv.cmd("setfenv", { on: true });
+		const hidden = await Be.call("execute_luau", { source: "print('hidden') return 'y'", confirm: true });
+		check("capture reported none", hidden.json?.capture === "none", hidden.json?.capture);
+		check("no captured output", (hidden.json?.output ?? "") === "", hidden.json?.output);
+		check("returns unaffected", (hidden.json?.returns ?? []).includes("y"), hidden.json?.returns);
+		await mv.cmd("setfenv", { on: false });
+		const visible = await Be.call("execute_luau", { source: "print('visible') return 'z'", confirm: true });
+		check("capture restored", visible.json?.capture === "print+warn", visible.json?.capture);
+		check("output captured again", /visible/.test(visible.json?.output ?? ""), visible.json?.output);
+	} finally {
+		await mv.stop();
+		await Be.stop();
+	}
+});
+
 const file = rec.save();
 writeFileSync(join(RESULTS, `${rec.runId}-bridge.log`), logs.bridge);
 writeFileSync(join(RESULTS, `${rec.runId}-lune.log`), logs.lune);

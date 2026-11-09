@@ -1,8 +1,8 @@
 {
   "notice": "Fresh automated evidence plus live inspection/decompile checks after the owner manually loaded the pinned reader from GitHub. Historical 124/124 is not renewed: the full AI-generation/manual-script suite has not been rerun for this revision.",
-  "readerBuild": "1f83c33a0b86",
-  "automatedPassed": 111,
-  "automatedTotal": 111,
+  "readerBuild": "bdbf0a0fc595",
+  "automatedPassed": 113,
+  "automatedTotal": 113,
   "liveGitHubLoader": "not yet tested in Volt",
   "livePassed": 0,
   "liveTotal": 0,
@@ -10,7 +10,7 @@
   "suites": [
     {
       "suite": "mock",
-      "revision": "f07dc1c7d4f50622",
+      "revision": "e619dfeb6559c671",
       "tests": [
         {
           "id": "SET-01",
@@ -2015,6 +2015,64 @@
             },
             {
               "name": "reports reader without exec",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "EXEC-04",
+          "status": "pass",
+          "expected": "task.wait(3) with a 1 s deadline: status timeout, unknownOutcome/clientMayStillBeRunning true, note says the client may still run and is not cancelled; the late result is dropped and a later run is unaffected",
+          "assertions": [
+            {
+              "name": "reader ready with exec",
+              "pass": true
+            },
+            {
+              "name": "reports timeout",
+              "pass": true
+            },
+            {
+              "name": "unknown outcome, may still be running",
+              "pass": true
+            },
+            {
+              "name": "does not claim cancellation",
+              "pass": true
+            },
+            {
+              "name": "deadline honoured",
+              "pass": true
+            },
+            {
+              "name": "later run unaffected by the late result",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "EXEC-05",
+          "status": "pass",
+          "expected": "Executor without setfenv: capture reports none, output is empty, returns still work; re-enabling restores print capture",
+          "assertions": [
+            {
+              "name": "capture reported none",
+              "pass": true
+            },
+            {
+              "name": "no captured output",
+              "pass": true
+            },
+            {
+              "name": "returns unaffected",
+              "pass": true
+            },
+            {
+              "name": "capture restored",
+              "pass": true
+            },
+            {
+              "name": "output captured again",
               "pass": true
             }
           ]

@@ -94,6 +94,60 @@ test("completed run returns output and marks executed", async () => {
 	assert.deepEqual(out.returns, ["42"]);
 });
 
+test("concurrent runs get distinct ids and isolated results", async () => {
+	const seen = [];
+	const svc = new ExecService(
+		bridgeStub({
+			request: async (_op, args) => {
+				seen.push(args.runId);
+				await new Promise((r) => setTimeout(r, 10));
+				return { executed: true, compiled: true, ok: true, output: `out:${args.source}` };
+			},
+		}),
+		true,
+	);
+	const [a, b] = await Promise.all([svc.run("A", { confirm: true }), svc.run("B", { confirm: true })]);
+	assert.notEqual(a.runId, b.runId);
+	assert.equal(a.output, "out:A");
+	assert.equal(b.output, "out:B");
+	assert.equal(new Set(seen).size, 2);
+});
+
+test("a fifth concurrent run is refused with exec_queue_full", async () => {
+	let release;
+	const gate = new Promise((r) => (release = r));
+	const svc = new ExecService(
+		bridgeStub({
+			request: async () => {
+				await gate;
+				return { executed: true, compiled: true, ok: true, output: "ok" };
+			},
+		}),
+		true,
+	);
+	const firstFour = [0, 1, 2, 3].map((i) => svc.run(`p${i}`, { confirm: true }));
+	const fifth = await svc.run("p4", { confirm: true });
+	assert.equal(fifth.rejectionCode, "exec_queue_full");
+	assert.equal(fifth.executed, false);
+	release();
+	const done = await Promise.all(firstFour);
+	assert.ok(done.every((d) => d.status === "completed"));
+});
+
+test("capture mode is surfaced from the reader", async () => {
+	const svc = new ExecService(
+		bridgeStub({
+			request: async () => ({ executed: true, compiled: true, ok: true, capture: "none", output: "", returns: ["y"] }),
+		}),
+		true,
+	);
+	const out = await svc.run("print('x') return 'y'", { confirm: true });
+	assert.equal(out.status, "completed");
+	assert.equal(out.capture, "none");
+	assert.equal(out.output, "");
+	assert.deepEqual(out.returns, ["y"]);
+});
+
 test("compile error is reported and nothing ran", async () => {
 	const svc = new ExecService(
 		bridgeStub({ request: async () => ({ executed: false, compiled: false, compileError: "boom" }) }),

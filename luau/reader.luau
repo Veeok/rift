@@ -9,7 +9,7 @@ local CONFIG = {
 	token = "__VOLT_BRIDGE_TOKEN__",
 	protocol = 1,
 	readerVersion = "0.1.0",
-	readerBuild = "1f83c33a0b86", -- sha256 prefix of this template, stamped by npm run setup
+	readerBuild = "bdbf0a0fc595", -- sha256 prefix of this template, stamped by npm run setup
 	connectBackoff = { 1, 2, 5, 10, 20, 30 }, -- seconds between initial-connect attempts
 	giveUpAfterSeconds = 30 * 60, -- stop trying to connect after this long without a bridge
 	-- Unauthenticated this long on one socket => close it and open one new socket. Live test on Volt 1.3.21.2
@@ -72,6 +72,10 @@ local CollectionService = game:GetService("CollectionService")
 
 local genv = (getgenv and getgenv()) or _G
 local STATE_KEY = "__VOLT_BRIDGE_READER"
+
+-- The environment this reader was loaded into. Executed chunks inherit it, so they see the
+-- same globals the reader sees (game, task, executor helpers) rather than a bare thread global.
+local READER_ENV = (type(getfenv) == "function" and getfenv(1)) or nil
 
 -- Volt globals (nil when unavailable; capabilities report what exists).
 local V = {
@@ -1359,7 +1363,7 @@ OPS.exec = function(args)
 	-- would leak across yields and overlapping runs, so it is never attempted.
 	local environment = "setfenv"
 	local okEnv = pcall(function()
-		local base = getfenv(0)
+		local base = READER_ENV or getfenv(0)
 		setfenv(chunk, setmetatable({ print = capturePrint, warn = captureWarn }, { __index = base }))
 	end)
 	if not okEnv then
