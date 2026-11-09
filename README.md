@@ -8,7 +8,7 @@ Requires Node >=20.12.0. Run `npm ci`, `npm run build`, then `npm run setup`. Se
 
 ## Pinned reader loader
 
-Use `loader.example.luau` locally in Volt. Replace only its token with VOLT_BRIDGE_TOKEN from your local .env. The final publication pins 044d5ee3c0abc0ee77001f0b9dc5c9e56da776e7 before the repository is pushed. The token is sent only to ws://127.0.0.1:38917/volt, never to GitHub. Do not put a token in a URL, issue, commit or public script. Port can be changed locally within1024..65535; the remote reader always uses127.0.0.1.
+Use `loader.example.luau` locally in Volt. Replace only its token with VOLT_BRIDGE_TOKEN from your local .env. The final publication pins b18ac609754e3f690bd13ded367cfac06caf226f before the repository is pushed. The token is sent only to ws://127.0.0.1:38917/volt, never to GitHub. Do not put a token in a URL, issue, commit or public script. Port can be changed locally within1024..65535; the remote reader always uses127.0.0.1.
 
 Fetching by a commit hash prevents silently following branch changes. To approve a later reader update, review it and change the pinned hash in your short local loader. No obfuscated/authentication-server loader is used.
 
