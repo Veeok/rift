@@ -83,7 +83,7 @@ export const CATALOG = [
 	t("SET-08", "mock", "Port conflict reported and retried", ["R18"], "with the port occupied get_status.listener = error/EADDRINUSE with fix text while MCP keeps serving; after release state becomes listening within 20 s"),
 	t("SET-09", "mock", "Missing token disables listener explicitly", ["R05", "R14"], "get_status.listener.state=disabled with reason naming the token file; tools/list still works; port closed"),
 	t("SET-10", "mock", "Clean shutdown on stdin close", ["R15"], "process exits 0 within 5 s, reader receives bye, port is closed afterwards"),
-	t("SET-11", "mock", "OpenCode V2 config example shape", ["R08"], "opencode.example.jsonc parses as JSONC; mcp.servers.volt is type local with node command, disabled false, no model/provider keys; .opencode/opencode.json unchanged by the project (mtime before project start, no volt entries; git cannot show it because .opencode/ is untracked)", false),
+	t("SET-11", "mock", "OpenCode V2 config registration shape", ["R08"], "opencode.example.jsonc parses as JSONC; mcp.servers.volt is type local with node command, disabled false, no model/provider keys; the local .opencode/opencode.json registers an owner-approved mcp.servers.rift (local, enabled, VOLT_BRIDGE_ALLOW_EXEC=1), has no server named volt and stores no bridge token", false),
 
 	// ---------------- AUTH ----------------
 	t("AUTH-01", "mock", "Valid token authenticates", ["R16", "R13", "T1"], "auth_ok with connectionId and session; get_status connected=true with that session, place and executor"),
@@ -216,7 +216,7 @@ export const CORRECTIONS = [
 	{ id: "OBJ-06", kind: "test definition", change: "contains 'door' search scoped to Workspace.Map", reason: "unscoped search also (correctly) matched the fixture ModuleScript DoorConfig; expected count 2 was wrong for the whole game. Exact count kept." },
 	{ id: "SER-01", kind: "assertion", change: "Vector3 compared field-by-field (+ exact key count) instead of JSON string", reason: "JSON key order is not part of the contract; values were already correct." },
 	{ id: "SER-05", kind: "product fix", change: "bootstrap strips a leading 'Enum.' from tostring(EnumType)", reason: "runtime-dependent tostring ('Enum.Material' vs 'Material'); contract is enum='Material'." },
-	{ id: "SET-11", kind: "test method", change: "'.opencode/opencode.json unchanged' proven by mtime before project start + no volt entries", reason: ".opencode/ is untracked in git, so git status reported '??' regardless of changes." },
+	{ id: "SET-11", kind: "test method", change: "'unchanged config' replaced by an explicit owner-approved registration check (mcp.servers.rift, allowExec=1, no volt entry, no token)", reason: "The owner authorised registering the bridge in .opencode/opencode.json; the old mtime/no-volt-entry invariant no longer describes the intended state. .opencode/ is still untracked in git." },
 	{ id: "REC-06", kind: "limit + stronger assertions", change: "observe 20 s instead of 9 s; added sequential-loop and increasing-backoff-gap assertions", reason: "Windows reports connection-refused on loopback after ~2 s, so only 2 attempts fit in 9 s." },
 	{ id: "GEN-01..10", kind: "environment fault + harness fix", change: "stray test bridge (started in the shared OpenCode service by a diagnostic `opencode debug config` in test/genproj) stopped; pre-flight/post-run port checks added; empty Lune tables normalized to arrays", reason: "first GEN run tested a bridge that could not bind (EADDRINUSE); the agent correctly refused to write a script. Attempt kept in history." },
 	{ id: "GEN-06, GEN-07, GEN-09", kind: "harness fix (mock fidelity)", change: "run_generated lists normalized to arrays; mock CollectionService:HasTag/GetTags/GetTagged take the instance argument like Roblox; re-scored on the preserved scripts of the same OpenCode run (no new model calls)", reason: "empty 'writes' arrived as {} and failed 'no world writes'; the generated script's tag-based door selection was not exercised by the mock" },
@@ -244,4 +244,9 @@ CATALOG.push(
 	t('AST-11','mock','Response trimming advertises remaining items',['R27'],'Size-trimmed last page has hasMore=true and nextOffset equals number returned',false),
 	t('OBJ-11','mock','Depth-pruned search explicitly reports partial results',['R28'],'A non-leaf depth frontier reports partial/max_depth; a leaf-only frontier remains complete',false),
 	t('GEN-11','mock','Generation runners share an exclusive output lock',['R07'],'A second generator is refused before model invocation; lease releases/reacquires and both runners use it',false),
+
+	// ---------------- EXEC (M2 opt-in client execution) ----------------
+	t('EXEC-01','mock','Execution stays off unless explicitly enabled',['T1'],'Default bridge registers six tools; execute_luau is absent and calls fail',false),
+	t('EXEC-02','mock','Opt-in execution returns output, values and errors',['R27'],'Enabled bridge + exec reader: print captured, return serialized, compile/runtime errors reported, oversize refused, reused runId never re-executes',false),
+	t('EXEC-03','mock','Reader without exec capability is reported, not silently run',['R28'],'Bridge enabled but reader loaded without allowExec: capability absent and calls fail with exec_unavailable',false),
 );

@@ -1,6 +1,6 @@
-// Example project-local OpenCode V2 configuration for volt-bridge (OpenCode 2.2.6).
-// Merge these keys into the existing C:/LOCAL_USER\RobloxTeam\.opencode\opencode.json:
-//   - add "volt" next to the existing servers under mcp.servers (earshot, context7)
+// Example project-local OpenCode V2 configuration for rift (OpenCode 2.2.6).
+// Merge these keys into your existing .opencode/opencode.json:
+//   - add "rift" next to the existing servers under mcp.servers
 //   - append the instructions entry to any existing "instructions" array
 // Do not save this as a separate higher-precedence config. A server object with the same name
 // replaces the whole entry, and other keys would override the project settings.
@@ -10,7 +10,7 @@
   "instructions": ["AGENT_INSTRUCTIONS.md"],
   "mcp": {
     "servers": {
-      "volt": {
+      "rift": {
         "type": "local",
         "command": ["node", "C:\\path\\to\\rift\\dist\\index.js"],
         "cwd": "C:\\path\\to\\rift",
@@ -18,6 +18,9 @@
           // Must match the port used by `npm run setup` (default 38917).
           "VOLT_BRIDGE_PORT": "38917",
           "VOLT_BRIDGE_LOG_LEVEL": "info"
+          // Opt-in client execution. Leave this out (or "0") for read-only; set "1" only if you
+          // also load the reader with allowExec = true and accept running model-written Luau.
+          // "VOLT_BRIDGE_ALLOW_EXEC": "1"
         },
         "timeout": {
           "startup": 30000,

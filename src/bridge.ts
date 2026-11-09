@@ -16,7 +16,11 @@ export type BridgeErrorCode =
 	| "disconnected"
 	| "send_failed"
 	| "too_large"
-	| "reader_error";
+	| "reader_error"
+	| "exec_disabled"
+	| "exec_unavailable"
+	| "exec_not_confirmed"
+	| "exec_rejected";
 
 export class BridgeError extends Error {
 	constructor(
@@ -425,8 +429,26 @@ export class Bridge {
 	private onChunk(msg: Record<string, unknown>): void {
 		const id = typeof msg.id === "string" ? msg.id : "";
 		const data = typeof msg.data === "string" ? msg.data : "";
-		const target = this.pending.get(id) ?? this.late.get(id);
+		const active = this.pending.get(id);
+		// Execution results are returned whole; a chunked exec response is a protocol error.
+		if (active && active.op === "exec") {
+			clearTimeout(active.timer);
+			this.pending.delete(id);
+			active.reject(new BridgeError("reader_error", "unexpected chunked response for exec", false, "unexpected_chunk"));
+			return;
+		}
+		const target = active ?? this.late.get(id);
 		if (!target) return;
+		if (target.chunks.length >= LIMITS.maxResultChunks) {
+			const p = this.pending.get(id);
+			this.late.delete(id);
+			if (p) {
+				clearTimeout(p.timer);
+				this.pending.delete(id);
+				p.reject(new BridgeError("too_large", `result exceeds ${LIMITS.maxResultChunks} chunks`));
+			}
+			return;
+		}
 		target.chunkChars += data.length;
 		if (target.chunkChars > LIMITS.maxChunkedResultChars) {
 			const p = this.pending.get(id);

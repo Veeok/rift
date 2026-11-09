@@ -9,7 +9,7 @@ local CONFIG = {
 	token = "__VOLT_BRIDGE_TOKEN__",
 	protocol = 1,
 	readerVersion = "0.1.0",
-	readerBuild = "132435da88d8", -- sha256 prefix of this template, stamped by npm run setup
+	readerBuild = "1f83c33a0b86", -- sha256 prefix of this template, stamped by npm run setup
 	connectBackoff = { 1, 2, 5, 10, 20, 30 }, -- seconds between initial-connect attempts
 	giveUpAfterSeconds = 30 * 60, -- stop trying to connect after this long without a bridge
 	-- Unauthenticated this long on one socket => close it and open one new socket. Live test on Volt 1.3.21.2
@@ -24,6 +24,12 @@ local CONFIG = {
 	yieldEvery = 1500,
 	scriptCacheTtl = 120,
 	registryCap = 25000,
+	-- Opt-in client execution (M2). Off unless explicitly enabled; see the resolution below.
+	allowExec = false,
+	execMaxSourceChars = 100000,
+	execMaxOutputChars = 60000,
+	execMaxReturns = 20,
+	execSeenCap = 64,
 }
 
 -- Public GitHub reader: credentials are supplied locally, never embedded in the fetched artifact.
@@ -45,6 +51,21 @@ assert(
 	CONFIG.token ~= "__VOLT_BRIDGE_" .. "TOKEN__",
 	"Rift: set getgenv().VoltBridgeConfig locally before loading the public reader"
 )
+
+-- Client execution is opt-in at load time. Either form works; neither is enabled by default.
+--   getgenv().VoltBridgeConfig = { token = ..., allowExec = true }
+--   getgenv().VoltBridgeAllowExec = true
+do
+	local opt = nil
+	if runtimeConfig ~= nil then
+		opt = runtimeConfig.allowExec
+	end
+	local root = (getgenv and getgenv()) or _G
+	if opt == nil and type(root) == "table" then
+		opt = root.VoltBridgeAllowExec
+	end
+	CONFIG.allowExec = opt == true
+end
 
 local HttpService = game:GetService("HttpService")
 local CollectionService = game:GetService("CollectionService")
@@ -92,6 +113,8 @@ local state = {
 	decompileActive = 0,
 	decompileWaiting = 0,
 	scriptCache = nil,
+	execSeen = {},
+	execOrder = {},
 }
 state.shortSession = string.sub(state.session, 1, 8)
 genv[STATE_KEY] = state
@@ -675,6 +698,9 @@ local function capabilities()
 			table.insert(caps, k)
 		end
 	end
+	if CONFIG.allowExec then
+		table.insert(caps, "exec")
+	end
 	return caps
 end
 
@@ -1168,8 +1194,6 @@ OPS.decompile = function(args, ctx)
 	}
 end
 
-table.freeze(OPS)
-
 ---------------------------------------------------------------------------
 -- Transport
 ---------------------------------------------------------------------------
@@ -1187,6 +1211,202 @@ local function send(tbl)
 	local okS, err = pcall(sock.Send, sock, encoded)
 	return okS, err
 end
+
+---------------------------------------------------------------------------
+-- Opt-in client execution (M2). Runs entirely inside this client with the executor's
+-- permissions; it grants no server authority. Nothing here can be triggered by game data:
+-- only an authenticated bridge request carrying a fresh runId executes.
+---------------------------------------------------------------------------
+
+local function previewValue(v, depth, seen, budget)
+	local function spend(s)
+		s = tostring(s)
+		if budget.left <= 0 then
+			budget.truncated = true
+			return ""
+		end
+		if #s > budget.left then
+			s = string.sub(s, 1, budget.left)
+			budget.truncated = true
+		end
+		budget.left -= #s
+		return s
+	end
+	local t = type(v)
+	if t == "string" then
+		if #v > 2000 then
+			return spend(string.sub(v, 1, 2000) .. "...(" .. #v .. " chars)")
+		end
+		return spend(v)
+	elseif t == "number" or t == "boolean" then
+		return spend(tostring(v))
+	elseif t == "nil" then
+		return spend("nil")
+	elseif t == "table" then
+		if depth >= 3 then
+			return spend("<table>")
+		end
+		if seen[v] then
+			return spend("<cycle>")
+		end
+		seen[v] = true
+		local parts, n = {}, 0
+		for k, val in pairs(v) do
+			n += 1
+			if n > 50 or budget.left <= 0 then
+				table.insert(parts, "...")
+				budget.truncated = true
+				break
+			end
+			local okKey, key = pcall(tostring, k)
+			table.insert(parts, (okKey and key or "<key>") .. "=" .. previewValue(val, depth + 1, seen, budget))
+		end
+		seen[v] = nil
+		return spend("{" .. table.concat(parts, ", ") .. "}")
+	elseif t == "userdata" then
+		local ok, name = pcall(function()
+			return v.ClassName and (tostring(v.ClassName) .. ": " .. tostring(v:GetFullName())) or nil
+		end)
+		if ok and name then
+			return spend("<" .. name .. ">")
+		end
+		return spend("<userdata>")
+	end
+	return spend("<" .. t .. ">")
+end
+
+OPS.exec = function(args)
+	if not CONFIG.allowExec then
+		fail(
+			"exec_disabled",
+			"client execution is disabled in this reader; set getgenv().VoltBridgeAllowExec = true before loading it"
+		)
+	end
+	local runId = type(args.runId) == "string" and args.runId or nil
+	if runId == nil or #runId < 1 or #runId > 64 or not string.match(runId, "^[%w%._%-]+$") then
+		fail("bad_run_id", "runId must be 1-64 chars of [A-Za-z0-9._-]")
+	end
+	if state.execSeen[runId] then
+		-- The bridge may retransmit or a caller may repeat a runId: never execute it twice.
+		return { observedAt = nowIso(), runId = runId, duplicate = true, executed = false }
+	end
+	local source = args.source
+	if type(source) ~= "string" or #source == 0 then
+		fail("bad_source", "source must be a non-empty string")
+	end
+	if #source > CONFIG.execMaxSourceChars then
+		fail("source_too_large", "source exceeds " .. CONFIG.execMaxSourceChars .. " chars")
+	end
+
+	-- Recorded before running so a duplicate request can never execute a second time.
+	state.execSeen[runId] = true
+	table.insert(state.execOrder, runId)
+	while #state.execOrder > CONFIG.execSeenCap do
+		local old = table.remove(state.execOrder, 1)
+		if old ~= nil then
+			state.execSeen[old] = nil
+		end
+	end
+
+	local started = os.clock()
+	-- Some executors throw on a syntax error instead of returning nil, so never assume the return form.
+	local okLoad, chunk, compileErr = pcall(loadstring, source, "=rift-exec")
+	if not okLoad then
+		chunk, compileErr = nil, chunk
+	end
+	if chunk == nil then
+		return {
+			observedAt = nowIso(),
+			runId = runId,
+			executed = false,
+			compiled = false,
+			compileError = string.sub(tostring(compileErr), 1, 4000),
+			durationMs = math.floor((os.clock() - started) * 1000),
+		}
+	end
+
+	local lines, outChars, truncated = {}, 0, false
+	local function record(prefix, values, count)
+		local parts = table.create(math.max(count, 0))
+		for i = 1, count do
+			parts[i] = tostring(values[i])
+		end
+		local line = prefix .. table.concat(parts, " ")
+		if outChars >= CONFIG.execMaxOutputChars then
+			truncated = true
+			return
+		end
+		local room = CONFIG.execMaxOutputChars - outChars
+		if #line > room then
+			line = string.sub(line, 1, room)
+			truncated = true
+		end
+		outChars += #line + 1
+		table.insert(lines, line)
+	end
+	local function capturePrint(...)
+		local n = select("#", ...)
+		local values = table.pack(...)
+		record("", values, n)
+	end
+	local function captureWarn(...)
+		local n = select("#", ...)
+		local values = table.pack(...)
+		record("[warn] ", values, n)
+	end
+
+	-- Capture only through a verified per-chunk environment. Swapping the shared globals
+	-- would leak across yields and overlapping runs, so it is never attempted.
+	local environment = "setfenv"
+	local okEnv = pcall(function()
+		local base = getfenv(0)
+		setfenv(chunk, setmetatable({ print = capturePrint, warn = captureWarn }, { __index = base }))
+	end)
+	if not okEnv then
+		environment = "no-capture"
+	end
+
+	local packed = table.pack(pcall(chunk))
+	local durationMs = math.floor((os.clock() - started) * 1000)
+
+	local returns = {}
+	local budget = { left = CONFIG.execMaxOutputChars, truncated = false }
+	if packed[1] then
+		local seen = {}
+		for i = 2, packed.n do
+			if #returns >= CONFIG.execMaxReturns or budget.left <= 0 then
+				break
+			end
+			table.insert(returns, previewValue(packed[i], 0, seen, budget))
+		end
+	end
+	-- Assign explicitly: `(ok and nil) or text` evaluates to text even when ok is true.
+	local runtimeError = nil
+	if not packed[1] then
+		runtimeError = string.sub(tostring(packed[2]), 1, 4000)
+	end
+
+	return {
+		observedAt = nowIso(),
+		runId = runId,
+		executed = true,
+		compiled = true,
+		ok = packed[1] == true,
+		runtimeError = runtimeError,
+		output = table.concat(lines, "\n"),
+		outputTruncated = truncated,
+		returns = returns,
+		returnCount = packed.n - 1,
+		returnsTruncated = budget.truncated,
+		capture = environment == "setfenv" and "print+warn" or "none",
+		durationMs = durationMs,
+		environment = environment,
+	}
+end
+
+-- The op table is frozen for the rest of the run, after every op (including the
+-- opt-in exec op) has been registered above.
+table.freeze(OPS)
 
 local function sendError(id, code, message)
 	send({

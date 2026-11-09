@@ -1,6 +1,6 @@
 {
   "name": "volt-bridge",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Local read-only bridge between a Volt-executed Luau reader and OpenCode (MCP stdio).",
   "type": "module",

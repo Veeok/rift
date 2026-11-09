@@ -1,129 +1,16 @@
 {
   "notice": "Fresh automated evidence plus live inspection/decompile checks after the owner manually loaded the pinned reader from GitHub. Historical 124/124 is not renewed: the full AI-generation/manual-script suite has not been rerun for this revision.",
-  "readerBuild": "132435da88d8",
-  "automatedPassed": 108,
-  "automatedTotal": 108,
-  "liveGitHubLoader": "Verified: owner manually executed pinned GitHub loader; reported build matched; live inspection and decompile checks passed",
-  "livePassed": 6,
-  "liveTotal": 6,
-  "liveTests": [
-    {
-      "id": "AUTH-L1",
-      "status": "pass",
-      "assertions": [
-        {
-          "name": "connected",
-          "pass": true
-        },
-        {
-          "name": "executor name reported",
-          "pass": true
-        },
-        {
-          "name": "placeId > 0",
-          "pass": true
-        },
-        {
-          "name": "capabilities include decompile/getproperties/getscripts",
-          "pass": true
-        },
-        {
-          "name": "live status op answered",
-          "pass": true
-        },
-        {
-          "name": "live reader runs the final reader build",
-          "pass": true
-        }
-      ]
-    },
-    {
-      "id": "OBJ-L1",
-      "status": "pass",
-      "assertions": [
-        {
-          "name": "root lists Workspace",
-          "pass": true
-        },
-        {
-          "name": "search ok",
-          "pass": true
-        },
-        {
-          "name": ">=1 BasePart",
-          "pass": true
-        }
-      ]
-    },
-    {
-      "id": "SER-L1",
-      "status": "pass",
-      "assertions": [
-        {
-          "name": "inspect ok",
-          "pass": true
-        },
-        {
-          "name": "Size is Vector3",
-          "pass": true
-        },
-        {
-          "name": "CFrame is CFrame",
-          "pass": true
-        },
-        {
-          "name": "no serialize_failed",
-          "pass": true
-        }
-      ]
-    },
-    {
-      "id": "AST-L1",
-      "status": "pass",
-      "assertions": [
-        {
-          "name": ">=1 asset-bearing instance with numeric assetId",
-          "pass": true
-        }
-      ]
-    },
-    {
-      "id": "DEC-L1",
-      "status": "pass",
-      "assertions": [
-        {
-          "name": "client script found",
-          "pass": true
-        },
-        {
-          "name": "read_script complete",
-          "pass": true
-        },
-        {
-          "name": "non-empty source",
-          "pass": true
-        }
-      ]
-    },
-    {
-      "id": "CAC-L1",
-      "status": "pass",
-      "assertions": [
-        {
-          "name": "second read complete",
-          "pass": true
-        },
-        {
-          "name": "cache hit",
-          "pass": true
-        }
-      ]
-    }
-  ],
+  "readerBuild": "1f83c33a0b86",
+  "automatedPassed": 111,
+  "automatedTotal": 111,
+  "liveGitHubLoader": "not yet tested in Volt",
+  "livePassed": 0,
+  "liveTotal": 0,
+  "liveTests": [],
   "suites": [
     {
       "suite": "mock",
-      "revision": "233d8e5ed15447f7",
+      "revision": "f07dc1c7d4f50622",
       "tests": [
         {
           "id": "SET-01",
@@ -749,7 +636,7 @@
         {
           "id": "SET-11",
           "status": "pass",
-          "expected": "opencode.example.jsonc parses as JSONC; mcp.servers.volt is type local with node command, disabled false, no model/provider keys; .opencode/opencode.json unchanged by the project (mtime before project start, no volt entries; git cannot show it because .opencode/ is untracked)",
+          "expected": "opencode.example.jsonc parses as JSONC; mcp.servers.volt is type local with node command, disabled false, no model/provider keys; the local .opencode/opencode.json registers an owner-approved mcp.servers.rift (local, enabled, VOLT_BRIDGE_ALLOW_EXEC=1), has no server named volt and stores no bridge token",
           "assertions": [
             {
               "name": "parses as JSONC",
@@ -776,11 +663,19 @@
               "pass": true
             },
             {
-              "name": ".opencode/opencode.json last modified before the bridge project existed",
+              "name": "owner-approved rift server is registered",
               "pass": true
             },
             {
-              "name": ".opencode/opencode.json has no volt entries",
+              "name": "rift is local, enabled and opts into execution",
+              "pass": true
+            },
+            {
+              "name": "no server entry named volt remains",
+              "pass": true
+            },
+            {
+              "name": "no bridge token stored in the config",
               "pass": true
             }
           ]
@@ -2035,6 +1930,91 @@
             },
             {
               "name": "late result cached",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "EXEC-01",
+          "status": "pass",
+          "expected": "Default bridge registers six tools; execute_luau is absent and calls fail",
+          "assertions": [
+            {
+              "name": "execute_luau absent by default",
+              "pass": true
+            },
+            {
+              "name": "six read-only tools only",
+              "pass": true
+            },
+            {
+              "name": "calling it fails when disabled",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "EXEC-02",
+          "status": "pass",
+          "expected": "Enabled bridge + exec reader: print captured, return serialized, compile/runtime errors reported, oversize refused, reused runId never re-executes",
+          "assertions": [
+            {
+              "name": "reader connected advertising exec",
+              "pass": true
+            },
+            {
+              "name": "execute_luau registered when enabled",
+              "pass": true
+            },
+            {
+              "name": "refuses without confirm",
+              "pass": true
+            },
+            {
+              "name": "completed",
+              "pass": true
+            },
+            {
+              "name": "captured print output",
+              "pass": true
+            },
+            {
+              "name": "returned value serialized",
+              "pass": true
+            },
+            {
+              "name": "marked executed",
+              "pass": true
+            },
+            {
+              "name": "reused runId did not re-execute",
+              "pass": true
+            },
+            {
+              "name": "compile error reported",
+              "pass": true
+            },
+            {
+              "name": "runtime error reported",
+              "pass": true
+            },
+            {
+              "name": "oversized source refused",
+              "pass": true
+            }
+          ]
+        },
+        {
+          "id": "EXEC-03",
+          "status": "pass",
+          "expected": "Bridge enabled but reader loaded without allowExec: capability absent and calls fail with exec_unavailable",
+          "assertions": [
+            {
+              "name": "reader did not advertise exec",
+              "pass": true
+            },
+            {
+              "name": "reports reader without exec",
               "pass": true
             }
           ]

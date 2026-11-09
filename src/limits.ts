@@ -1,5 +1,5 @@
 export const BRIDGE_NAME = "volt-bridge";
-export const BRIDGE_VERSION = "0.1.0";
+export const BRIDGE_VERSION = "0.2.0";
 export const PROTOCOL_VERSION = 1;
 export const LISTEN_HOST = "127.0.0.1"; // Never configurable: loopback only.
 export const WS_PATH = "/volt";
@@ -20,6 +20,7 @@ export const LIMITS = {
 	defaultDeadlineMs: 15_000,
 	searchDeadlineMs: 25_000,
 	maxChunkedResultChars: 16 * 1024 * 1024,
+	maxResultChunks: 4096,
 	lateResultRetentionMs: 10 * 60_000,
 
 	// Decompile jobs and cache
@@ -43,4 +44,13 @@ export const LIMITS = {
 	readScriptMaxChars: 60_000,
 	readScriptDefaultWaitMs: 10_000,
 	readScriptMaxWaitMs: 25_000,
+
+	// Client execution (opt-in; client-side only, no server authority)
+	execMaxSourceChars: 100_000,
+	execMaxOutputChars: 60_000,
+	execMaxReturns: 20,
+	execMaxRetainedResults: 32,
+	execMaxQueue: 4,
+	execDefaultDeadlineMs: 20_000,
+	execMaxDeadlineMs: 60_000,
 } as const;

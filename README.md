@@ -1,6 +1,6 @@
 # Rift
 
-Local, read-only Roblox inspection for OpenCode over MCP. The current reader uses Volt; other executors are future work, not a compatibility claim.
+Local Roblox inspection for OpenCode over MCP, with an opt-in client-execution mode. The current reader uses Volt; other executors are future work, not a compatibility claim.
 
 ## Local host
 
@@ -14,7 +14,11 @@ Fetching by a commit hash prevents silently following branch changes. To approve
 
 ## Capabilities
 
-Six bounded tools: get_status, list_children, search_instances, inspect_instance, list_scripts and read_script. Object ids are session-scoped. Decompile jobs can be polled; cached data is keyed by reader session/script/hash/options. No modules are required. No remote firing, hooks, mutation or arbitrary code execution is exposed through the bridge. Generated Luau is saved locally and executed manually by the owner.
+Six bounded read-only tools: get_status, list_children, search_instances, inspect_instance, list_scripts and read_script. Object ids are session-scoped. Decompile jobs can be polled; cached data is keyed by reader session/script/hash/options. No modules are required. No remote firing, hooks or mutation are exposed.
+
+### Opt-in client execution
+
+A seventh tool, `execute_luau`, exists only when BOTH the bridge started with `VOLT_BRIDGE_ALLOW_EXEC=1` and the reader was loaded with `allowExec = true` in `VoltBridgeConfig`. It runs Luau inside the connected client with the executor's permissions and grants no server authority. Every call needs `confirm: true`. The bridge mints the run id and the reader refuses to run the same id twice; a caller-supplied id only references an earlier run and unknown ids are refused. Output and return values are bounded, and a timeout or disconnect reports an unknown outcome rather than claiming cancellation. Returned data is untrusted.
 
 ## Secrets and reports
 

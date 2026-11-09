@@ -434,14 +434,22 @@ await T("SET-11", async (check) => {
 	check("disabled false", v?.disabled === false);
 	check("no model/provider keys", !("model" in json) && !("providers" in json) && !("provider" in json));
 	check("instructions array", Array.isArray(json.instructions));
-	// .opencode/ is untracked in git, so prove "unchanged" by timestamps and content instead.
+	// .opencode/ is untracked in git, so prove the local state directly.
+	// The owner approved registering this bridge under mcp.servers.rift with execution opt-in.
 	const cfgPath = join(ROOT, "..", "..", ".opencode", "opencode.json");
-	const cfgMtime = statSync(cfgPath).mtimeMs;
-	const projectStart = statSync(join(ROOT, "package.json")).birthtimeMs;
-	const cfg = readFileSync(cfgPath, "utf8");
-	check(".opencode/opencode.json last modified before the bridge project existed", cfgMtime < projectStart, { cfgMtime: new Date(cfgMtime).toISOString(), projectStart: new Date(projectStart).toISOString() });
-	check(".opencode/opencode.json has no volt entries", !/volt/i.test(cfg));
-	return { actual: { server: v, instructions: json.instructions, cfgMtime: new Date(cfgMtime).toISOString(), projectStart: new Date(projectStart).toISOString() } };
+	const cfgText = readFileSync(cfgPath, "utf8");
+	const cfg = JSON.parse(cfgText);
+	const servers = Object.keys(cfg.mcp?.servers ?? {});
+	const rift = cfg.mcp?.servers?.rift;
+	check("owner-approved rift server is registered", !!rift, servers);
+	check(
+		"rift is local, enabled and opts into execution",
+		rift?.type === "local" && rift?.disabled === false && rift?.environment?.VOLT_BRIDGE_ALLOW_EXEC === "1",
+		rift?.environment ?? null,
+	);
+	check("no server entry named volt remains", !servers.includes("volt"), servers);
+	check("no bridge token stored in the config", !/VOLT_BRIDGE_TOKEN/.test(cfgText));
+	return { actual: { server: v, instructions: json.instructions, servers, allowExec: rift?.environment?.VOLT_BRIDGE_ALLOW_EXEC } };
 });
 
 await T("SET-10", async (check) => {
@@ -1128,6 +1136,90 @@ await T("CAC-10", async (check) => {
 	const entry = svc.lookup(cacheKey("s", info, undefined));
 	check("late result cached", entry?.lines?.[0] === "return 'late'", entry?.lines);
 	return { actual: { status: job.status, message: job.error?.message } };
+});
+
+// ======================= Phase E: opt-in client execution (M2) =======================
+await T("EXEC-01", async (check) => {
+	// A prior phase's teardown stops the shared bridge, so this case owns one.
+	const Bx = await startBridge({ port: 38942, tokenFile });
+	try {
+		const tools = (await Bx.rpc("tools/list", {})).result.tools.map((x) => x.name);
+		check("execute_luau absent by default", !tools.includes("execute_luau"), tools);
+		check("six read-only tools only", tools.length === 6, tools.length);
+		const r = await Bx.call("execute_luau", { source: "return 1", confirm: true });
+		check("calling it fails when disabled", r.isError === true, errCode(r));
+		return { actual: { tools, code: errCode(r) } };
+	} finally {
+		await Bx.stop();
+	}
+});
+
+await T("EXEC-02", async (check) => {
+	const port = 38938;
+	const ctrl = 38939;
+	const Be = await startBridge({ port, tokenFile, extraEnv: { VOLT_BRIDGE_ALLOW_EXEC: "1" } });
+	const mv = await startMockVolt({
+		ctrlPort: ctrl,
+		bridgePort: port,
+		token,
+		runtimeConfig: { token, port, allowExec: true },
+		log: (s) => (logs.lune += s),
+	});
+	try {
+		const status = (await Be.call("get_status", { waitForReaderMs: 20000 })).json;
+		const caps = status.reader?.capabilities ?? [];
+		check("reader connected advertising exec", status.connected === true && caps.includes("exec"), caps);
+		const tools = (await Be.rpc("tools/list", {})).result.tools.map((x) => x.name);
+		check("execute_luau registered when enabled", tools.includes("execute_luau"), tools);
+
+		const noConfirm = await Be.call("execute_luau", { source: "return 1" });
+		check("refuses without confirm", errCode(noConfirm) === "exec_not_confirmed", errCode(noConfirm));
+
+		const run = await Be.call("execute_luau", { source: "print('hello from exec') return 40 + 2", confirm: true });
+		const j = run.json;
+		check("completed", j?.status === "completed", j?.status);
+		check("captured print output", /hello from exec/.test(j?.output ?? ""), j?.output);
+		check("returned value serialized", (j?.returns ?? []).includes("42"), j?.returns);
+		check("marked executed", j?.executed === true);
+
+		const dup = await Be.call("execute_luau", { source: "print('should not run')", confirm: true, runId: j?.runId });
+		check("reused runId did not re-execute", dup.json?.duplicateOfPreviousRun === true && !/should not run/.test(dup.json?.output ?? ""), dup.json);
+
+		const compile = await Be.call("execute_luau", { source: "local = = =", confirm: true });
+		check("compile error reported", compile.json?.status === "compile_error", JSON.stringify(compile.json ?? compile.texts));
+
+		const runtime = await Be.call("execute_luau", { source: "error('boom')", confirm: true });
+		check("runtime error reported", runtime.json?.status === "runtime_error" && /boom/.test(runtime.json?.runtimeError ?? ""), runtime.json?.runtimeError);
+
+		const big = await Be.call("execute_luau", { source: "x".repeat(100_001), confirm: true });
+		check("oversized source refused", big.isError === true || /limit/.test(big.json?.note ?? ""), JSON.stringify(big.json ?? big.texts).slice(0, 300));
+	} finally {
+		await mv.stop();
+		await Be.stop();
+	}
+});
+
+await T("EXEC-03", async (check) => {
+	const port = 38940;
+	const ctrl = 38941;
+	const Be = await startBridge({ port, tokenFile, extraEnv: { VOLT_BRIDGE_ALLOW_EXEC: "1" } });
+	const mv = await startMockVolt({
+		ctrlPort: ctrl,
+		bridgePort: port,
+		token,
+		runtimeConfig: { token, port },
+		log: (s) => (logs.lune += s),
+	});
+	try {
+		const status = (await Be.call("get_status", { waitForReaderMs: 20000 })).json;
+		const caps = status.reader?.capabilities ?? [];
+		check("reader did not advertise exec", status.connected === true && !caps.includes("exec"), caps);
+		const r = await Be.call("execute_luau", { source: "return 1", confirm: true });
+		check("reports reader without exec", errCode(r) === "exec_unavailable", errCode(r));
+	} finally {
+		await mv.stop();
+		await Be.stop();
+	}
 });
 
 const file = rec.save();

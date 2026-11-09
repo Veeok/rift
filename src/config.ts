@@ -17,6 +17,14 @@ export interface BridgeConfig {
 	token: string | null;
 	tokenError: string | null;
 	logLevel: string | undefined;
+	allowExec: boolean;
+}
+
+/** Opt-in client execution. Anything other than an explicit yes keeps it off. */
+export function parseAllowExec(raw: string | undefined): boolean {
+	if (raw === undefined) return false;
+	const v = raw.trim().toLowerCase();
+	return v === "1" || v === "true" || v === "yes" || v === "on";
 }
 
 export function parsePort(raw: string | undefined): number {
@@ -61,7 +69,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, envFile = DEFAU
 		const raw = env.VOLT_BRIDGE_TOKEN.trim();
 		if (TOKEN_PATTERN.test(raw)) token = raw;
 		else tokenError = "VOLT_BRIDGE_TOKEN is invalid; expected 32-256 base64url characters";
-		return { port, tokenFile, token, tokenError, logLevel: env.VOLT_BRIDGE_LOG_LEVEL };
+		return { port, tokenFile, token, tokenError, logLevel: env.VOLT_BRIDGE_LOG_LEVEL, allowExec: parseAllowExec(env.VOLT_BRIDGE_ALLOW_EXEC) };
 	}
 	try {
 		const raw = readFileSync(tokenFile, "utf8").trim();
@@ -70,5 +78,5 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, envFile = DEFAU
 	} catch {
 		tokenError = `token file ${tokenFile} not found; run "npm run setup" in tools/volt-bridge`;
 	}
-	return { port, tokenFile, token, tokenError, logLevel: env.VOLT_BRIDGE_LOG_LEVEL };
+	return { port, tokenFile, token, tokenError, logLevel: env.VOLT_BRIDGE_LOG_LEVEL, allowExec: parseAllowExec(env.VOLT_BRIDGE_ALLOW_EXEC) };
 }
