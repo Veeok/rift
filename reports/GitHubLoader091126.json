@@ -1,9 +1,125 @@
 {
-  "notice": "Fresh automated evidence for local .env and getgenv/public-reader changes. Historical 124/124 is not renewed: AI generation and real Volt compatibility for this revision have not been rerun.",
+  "notice": "Fresh automated evidence plus live inspection/decompile checks after the owner manually loaded the pinned reader from GitHub. Historical 124/124 is not renewed: the full AI-generation/manual-script suite has not been rerun for this revision.",
   "readerBuild": "132435da88d8",
   "automatedPassed": 108,
   "automatedTotal": 108,
-  "liveGitHubLoader": "not yet tested in Volt",
+  "liveGitHubLoader": "Verified: owner manually executed pinned GitHub loader; reported build matched; live inspection and decompile checks passed",
+  "livePassed": 6,
+  "liveTotal": 6,
+  "liveTests": [
+    {
+      "id": "AUTH-L1",
+      "status": "pass",
+      "assertions": [
+        {
+          "name": "connected",
+          "pass": true
+        },
+        {
+          "name": "executor name reported",
+          "pass": true
+        },
+        {
+          "name": "placeId > 0",
+          "pass": true
+        },
+        {
+          "name": "capabilities include decompile/getproperties/getscripts",
+          "pass": true
+        },
+        {
+          "name": "live status op answered",
+          "pass": true
+        },
+        {
+          "name": "live reader runs the final reader build",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "id": "OBJ-L1",
+      "status": "pass",
+      "assertions": [
+        {
+          "name": "root lists Workspace",
+          "pass": true
+        },
+        {
+          "name": "search ok",
+          "pass": true
+        },
+        {
+          "name": ">=1 BasePart",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "id": "SER-L1",
+      "status": "pass",
+      "assertions": [
+        {
+          "name": "inspect ok",
+          "pass": true
+        },
+        {
+          "name": "Size is Vector3",
+          "pass": true
+        },
+        {
+          "name": "CFrame is CFrame",
+          "pass": true
+        },
+        {
+          "name": "no serialize_failed",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "id": "AST-L1",
+      "status": "pass",
+      "assertions": [
+        {
+          "name": ">=1 asset-bearing instance with numeric assetId",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "id": "DEC-L1",
+      "status": "pass",
+      "assertions": [
+        {
+          "name": "client script found",
+          "pass": true
+        },
+        {
+          "name": "read_script complete",
+          "pass": true
+        },
+        {
+          "name": "non-empty source",
+          "pass": true
+        }
+      ]
+    },
+    {
+      "id": "CAC-L1",
+      "status": "pass",
+      "assertions": [
+        {
+          "name": "second read complete",
+          "pass": true
+        },
+        {
+          "name": "cache hit",
+          "pass": true
+        }
+      ]
+    }
+  ],
   "suites": [
     {
       "suite": "mock",
