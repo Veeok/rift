@@ -110,6 +110,7 @@ local state = {
 	connections = {},
 	authed = false,
 	connectionId = nil,
+	execOutputEpoch = 0,
 	lastServerMessage = 0,
 	unauthedSince = nil,
 	lastHi = 0,
@@ -685,6 +686,27 @@ end
 -- Fixed op table (read-only). No eval, no property writes, no remotes, no hooks.
 ---------------------------------------------------------------------------
 
+-- Never hook shared globals. Verify that the executor actually applies a private
+-- chunk environment (some implementations silently ignore setfenv).
+local function installExecCapture(chunk, capturePrint, captureWarn)
+	local base = READER_ENV or getfenv(0)
+	local env = setmetatable({ print = capturePrint, warn = captureWarn }, { __index = base })
+	setfenv(chunk, env)
+	assert(getfenv(chunk) == env, "per-chunk environment unavailable")
+end
+
+local execOutputAvailable = false
+if CONFIG.allowExec then
+	local ok, supported = pcall(function()
+		local probe = assert(loadstring("return print, warn", "=rift-capture-check"))
+		local a, b = function() end, function() end
+		installExecCapture(probe, a, b)
+		local p, w = probe()
+		return p == a and w == b
+	end)
+	execOutputAvailable = ok and supported == true
+end
+
 local function capabilities()
 	local caps = {}
 	for _, k in ipairs({
@@ -704,6 +726,9 @@ local function capabilities()
 	end
 	if CONFIG.allowExec then
 		table.insert(caps, "exec")
+		if execOutputAvailable then
+			table.insert(caps, "exec_output_v1")
+		end
 	end
 	return caps
 end
@@ -1222,15 +1247,41 @@ end
 -- only an authenticated bridge request carrying a fresh runId executes.
 ---------------------------------------------------------------------------
 
+local function redactExecText(s)
+	-- Literal replacement on the complete text, before any output boundaries.
+	local parts, pos = {}, 1
+	while true do
+		local first, last = string.find(s, CONFIG.token, pos, true)
+		if not first then
+			table.insert(parts, string.sub(s, pos))
+			break
+		end
+		table.insert(parts, string.sub(s, pos, first - 1))
+		table.insert(parts, "[redacted]")
+		pos = last + 1
+	end
+	return safeText(table.concat(parts))
+end
+
+local function clipExecText(s, limit)
+	local stop = math.min(#s, math.max(0, limit))
+	while stop > 0 and stop < #s do
+		local b = string.byte(s, stop + 1)
+		if b < 0x80 or b >= 0xC0 then break end
+		stop -= 1
+	end
+	return string.sub(s, 1, stop)
+end
+
 local function previewValue(v, depth, seen, budget)
 	local function spend(s)
-		s = tostring(s)
+		s = redactExecText(tostring(s))
 		if budget.left <= 0 then
 			budget.truncated = true
 			return ""
 		end
 		if #s > budget.left then
-			s = string.sub(s, 1, budget.left)
+			s = clipExecText(s, budget.left)
 			budget.truncated = true
 		end
 		budget.left -= #s
@@ -1238,8 +1289,9 @@ local function previewValue(v, depth, seen, budget)
 	end
 	local t = type(v)
 	if t == "string" then
+		v = redactExecText(v)
 		if #v > 2000 then
-			return spend(string.sub(v, 1, 2000) .. "...(" .. #v .. " chars)")
+			return spend(clipExecText(v, 2000) .. "...(" .. #v .. " chars)")
 		end
 		return spend(v)
 	elseif t == "number" or t == "boolean" then
@@ -1324,28 +1376,81 @@ OPS.exec = function(args)
 			runId = runId,
 			executed = false,
 			compiled = false,
-			compileError = string.sub(tostring(compileErr), 1, 4000),
+			compileError = clipExecText(redactExecText(tostring(compileErr)), 4000),
 			durationMs = math.floor((os.clock() - started) * 1000),
 		}
 	end
 
 	local lines, outChars, truncated = {}, 0, false
+	local returned = false
+	local socket, connectionId, epoch = state.socket, state.connectionId, state.execOutputEpoch
+	local captureEnabled = false
+	local streamClosed, streamChars, streamFrames = false, 0, 0
+	local notice = "[exec output truncated]"
+	local streamLimit = math.min(CONFIG.execMaxOutputChars, 60000) - #notice
+	local function currentConnection()
+		return state.alive and state.authed and state.socket == socket
+			and state.connectionId == connectionId and state.execOutputEpoch == epoch
+			and genv[STATE_KEY] == state
+	end
+	local function emit(level, message, isTruncated)
+		if not captureEnabled or not currentConnection() then
+			streamClosed = true
+			return false
+		end
+		local ok = pcall(function()
+			local encoded = HttpService:JSONEncode({
+				v = CONFIG.protocol, type = "log", producer = "exec_capture", runId = runId,
+				level = level, message = message, truncated = isTruncated or nil,
+			})
+			-- Use only the original authenticated transport; never the generic send().
+			if currentConnection() then socket:Send(encoded) end
+		end)
+		if not ok then streamClosed = true end
+		return ok
+	end
+	local function stream(level, message)
+		if streamClosed then return end
+		local pos = 1
+		repeat
+			local room = math.min(4000, streamLimit - streamChars)
+			if streamFrames >= 100 or room <= 0 then
+				emit("warn", notice, true)
+				streamClosed = true
+				return
+			end
+			local part = clipExecText(string.sub(message, pos), room)
+			if #part == 0 and pos <= #message then
+				emit("warn", notice, true)
+				streamClosed = true
+				return
+			end
+			streamFrames += 1 -- Empty prints consume the frame budget too.
+			streamChars += #part
+			if not emit(level, part) then return end
+			pos += #part
+		until pos > #message
+	end
 	local function record(prefix, values, count)
+		if not currentConnection() then streamClosed = true end
+		if (returned or truncated) and streamClosed then return end
 		local parts = table.create(math.max(count, 0))
 		for i = 1, count do
-			parts[i] = tostring(values[i])
+			local ok, text = pcall(tostring, values[i])
+			parts[i] = ok and text or "<unprintable>"
 		end
-		local line = prefix .. table.concat(parts, " ")
-		if outChars >= CONFIG.execMaxOutputChars then
-			truncated = true
-			return
-		end
-		local room = CONFIG.execMaxOutputChars - outChars
+		local message = redactExecText(table.concat(parts, " "))
+		stream(prefix == "" and "info" or "warn", message)
+		if returned then return end
+		local line = prefix .. message
+		local separator = #lines > 0 and 1 or 0
+		local room = CONFIG.execMaxOutputChars - outChars - separator
+		if room <= 0 then truncated = true; return end
 		if #line > room then
-			line = string.sub(line, 1, room)
+			line = clipExecText(line, room)
 			truncated = true
 		end
-		outChars += #line + 1
+		outChars += #line + separator
 		table.insert(lines, line)
 	end
 	local function capturePrint(...)
@@ -1363,14 +1468,16 @@ OPS.exec = function(args)
 	-- would leak across yields and overlapping runs, so it is never attempted.
 	local environment = "setfenv"
 	local okEnv = pcall(function()
-		local base = READER_ENV or getfenv(0)
-		setfenv(chunk, setmetatable({ print = capturePrint, warn = captureWarn }, { __index = base }))
+		assert(execOutputAvailable, "verified capture unavailable")
+		installExecCapture(chunk, capturePrint, captureWarn)
 	end)
+	captureEnabled = okEnv
 	if not okEnv then
 		environment = "no-capture"
 	end
 
 	local packed = table.pack(pcall(chunk))
+	returned = true
 	local durationMs = math.floor((os.clock() - started) * 1000)
 
 	local returns = {}
@@ -1387,7 +1494,7 @@ OPS.exec = function(args)
 	-- Assign explicitly: `(ok and nil) or text` evaluates to text even when ok is true.
 	local runtimeError = nil
 	if not packed[1] then
-		runtimeError = string.sub(tostring(packed[2]), 1, 4000)
+		runtimeError = clipExecText(redactExecText(tostring(packed[2])), 4000)
 	end
 
 	return {
@@ -1515,6 +1622,7 @@ local function onMessage(message, isBinary)
 	end
 	local t = msg.type
 	if t == "hello" then
+		state.execOutputEpoch += 1
 		-- New transport (first connect or Volt's automatic reconnect): authenticate again.
 		state.authed = false
 		state.unauthedSince = state.unauthedSince or os.clock()
@@ -1528,11 +1636,13 @@ local function onMessage(message, isBinary)
 		end
 		send({ type = "auth", token = CONFIG.token, nonce = msg.nonce, reader = readerInfo() })
 	elseif t == "auth_ok" then
+		state.execOutputEpoch += 1
 		state.authed = true
 		state.unauthedSince = nil
 		state.connectionId = msg.connectionId
 		info("connected as " .. tostring(msg.connectionId) .. ", session " .. state.session)
 	elseif t == "auth_fail" then
+		state.execOutputEpoch += 1
 		warn("[volt-bridge] authentication failed: " .. tostring(msg.code) .. " " .. tostring(msg.message))
 		if msg.fatal then
 			-- Fatal (bad token, protocol mismatch, another reader active): stop so Volt does not retry forever.
@@ -1545,6 +1655,7 @@ local function onMessage(message, isBinary)
 			handleRequest(msg)
 		end
 	elseif t == "bye" then
+		state.execOutputEpoch += 1
 		state.authed = false
 		state.unauthedSince = os.clock()
 		info("bridge closed the session: " .. tostring(msg.reason))
@@ -1552,6 +1663,7 @@ local function onMessage(message, isBinary)
 end
 
 local function onClose()
+	state.execOutputEpoch += 1
 	-- Fires for local Close() and remote closes. Volt may reconnect the same socket by itself,
 	-- so never open a second socket here; the supervisor decides if replacement is needed.
 	state.authed = false
@@ -1559,6 +1671,7 @@ local function onClose()
 end
 
 local function detach(closeSocket)
+	state.execOutputEpoch += 1
 	for _, c in ipairs(state.connections) do
 		pcall(function()
 			c:Disconnect()
@@ -1574,6 +1687,7 @@ local function detach(closeSocket)
 end
 
 local function attach(sock)
+	state.execOutputEpoch += 1
 	state.socket = sock
 	state.authed = false
 	state.unauthedSince = os.clock()
@@ -1635,6 +1749,7 @@ task.spawn(function()
 		else
 			local now = os.clock()
 			if state.authed and now - state.lastServerMessage > CONFIG.staleSeconds then
+				state.execOutputEpoch += 1
 				state.authed = false
 				state.unauthedSince = now
 				warn("[volt-bridge] bridge silent for " .. CONFIG.staleSeconds .. "s; waiting for reconnect")
