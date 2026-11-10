@@ -1,6 +1,6 @@
 {
   "notice": "Source-candidate validation snapshot; raw source/logs/screenshots and credentials are excluded. Publication does not imply pending live checks passed.",
-  "status": "VALIDATION_PENDING",
+  "status": "COMPLETE_LOCAL_VERIFICATION",
   "build": {
     "serviceVersion": "0.3.0",
     "serviceBuild": "6835c36794e00c19",
@@ -10,57 +10,57 @@
   },
   "totals": {
     "automated": {
-      "passed": 60,
+      "passed": 62,
       "total": 62,
       "failed": 0,
       "pending": 0,
       "blocked": 0,
-      "unrun": 2
+      "unrun": 0
     },
     "live": {
-      "passed": 0,
+      "passed": 6,
       "total": 6,
       "failed": 0,
       "pending": 0,
       "blocked": 0,
-      "unrun": 6
+      "unrun": 0
     },
     "uniqueOverall": {
-      "passed": 60,
+      "passed": 68,
       "total": 68,
       "failed": 0,
       "pending": 0,
       "blocked": 0,
-      "unrun": 8
+      "unrun": 0
     }
   },
   "milestones": {
     "M3": {
       "automated": {
-        "passed": 9,
+        "passed": 10,
         "total": 10,
         "failed": 0,
         "pending": 0,
         "blocked": 0,
-        "unrun": 1
+        "unrun": 0
       },
       "live": {
-        "passed": 0,
+        "passed": 2,
         "total": 2,
         "failed": 0,
         "pending": 0,
         "blocked": 0,
-        "unrun": 2
+        "unrun": 0
       }
     },
     "M4": {
       "automated": {
-        "passed": 7,
+        "passed": 8,
         "total": 8,
         "failed": 0,
         "pending": 0,
         "blocked": 0,
-        "unrun": 1
+        "unrun": 0
       },
       "live": {
         "passed": 0,
@@ -99,22 +99,22 @@
         "unrun": 0
       },
       "live": {
-        "passed": 0,
+        "passed": 2,
         "total": 2,
         "failed": 0,
         "pending": 0,
         "blocked": 0,
-        "unrun": 2
+        "unrun": 0
       }
     },
     "M8": {
       "automated": {
-        "passed": 5,
+        "passed": 6,
         "total": 6,
         "failed": 0,
         "pending": 0,
         "blocked": 0,
-        "unrun": 1
+        "unrun": 0
       },
       "live": {
         "passed": 0,
@@ -135,12 +135,12 @@
         "unrun": 0
       },
       "live": {
-        "passed": 0,
+        "passed": 3,
         "total": 3,
         "failed": 0,
         "pending": 0,
         "blocked": 0,
-        "unrun": 3
+        "unrun": 0
       }
     },
     "M10": {
@@ -153,12 +153,12 @@
         "unrun": 0
       },
       "live": {
-        "passed": 0,
+        "passed": 2,
         "total": 2,
         "failed": 0,
         "pending": 0,
         "blocked": 0,
-        "unrun": 2
+        "unrun": 0
       }
     }
   },
@@ -232,7 +232,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -295,7 +295,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -358,7 +358,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -421,7 +421,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -479,7 +479,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -537,7 +537,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -590,7 +590,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -643,7 +643,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -696,7 +696,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -749,7 +749,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -802,7 +802,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -855,7 +855,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -908,7 +908,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -961,7 +961,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1004,7 +1004,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1072,7 +1072,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1140,7 +1140,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1208,7 +1208,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1276,7 +1276,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1344,7 +1344,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1412,7 +1412,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1480,7 +1480,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1548,7 +1548,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1616,7 +1616,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1684,7 +1684,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1752,7 +1752,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1820,7 +1820,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1888,7 +1888,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -1956,7 +1956,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2024,7 +2024,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2092,7 +2092,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2125,7 +2125,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2188,7 +2188,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2251,7 +2251,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2314,7 +2314,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2377,7 +2377,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2440,7 +2440,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2503,7 +2503,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2566,7 +2566,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2639,7 +2639,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2702,7 +2702,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2765,7 +2765,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2828,7 +2828,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2891,7 +2891,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -2954,7 +2954,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -3017,7 +3017,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -3080,7 +3080,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -3143,7 +3143,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -3206,7 +3206,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -3269,7 +3269,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -3332,7 +3332,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -3395,7 +3395,7 @@
         {
           "status": "pass",
           "build": "6835c36794e00c19",
-          "at": "2026-11-10T19:45:56.196Z"
+          "at": "2026-11-10T21:45:05.420Z"
         }
       ]
     },
@@ -3710,8 +3710,8 @@
         "M4"
       ],
       "kind": "automated",
-      "status": "unrun",
-      "evidenceBuild": "c2cae81d2371839d",
+      "status": "pass",
+      "evidenceBuild": "6835c36794e00c19",
       "acceptedForBuild": null,
       "reuseNotice": null,
       "history": [
@@ -3744,6 +3744,16 @@
           "status": "observed",
           "build": null,
           "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "fail",
+          "build": null,
+          "at": null
         }
       ]
     },
@@ -3753,13 +3763,13 @@
         "M8"
       ],
       "kind": "automated",
-      "status": "unrun",
-      "evidenceBuild": "c2cae81d2371839d",
+      "status": "pass",
+      "evidenceBuild": "6835c36794e00c19",
       "acceptedForBuild": null,
       "reuseNotice": null,
       "history": [
         {
-          "status": "pass",
+          "status": "observed",
           "build": null,
           "at": null
         },
@@ -3776,11 +3786,17 @@
         "M3"
       ],
       "kind": "live",
-      "status": "unrun",
-      "evidenceBuild": "c2cae81d2371839d",
+      "status": "pass",
+      "evidenceBuild": "6835c36794e00c19",
       "acceptedForBuild": null,
       "reuseNotice": null,
-      "history": []
+      "history": [
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": null
+        }
+      ]
     },
     {
       "id": "LIVE-E2E-02",
@@ -3788,11 +3804,17 @@
         "M9"
       ],
       "kind": "live",
-      "status": "unrun",
-      "evidenceBuild": "c2cae81d2371839d",
+      "status": "pass",
+      "evidenceBuild": "6835c36794e00c19",
       "acceptedForBuild": null,
       "reuseNotice": null,
-      "history": []
+      "history": [
+        {
+          "status": "blocked",
+          "build": "c2cae81d2371839d",
+          "at": null
+        }
+      ]
     },
     {
       "id": "LIVE-E2E-03",
@@ -3800,11 +3822,17 @@
         "M10"
       ],
       "kind": "live",
-      "status": "unrun",
-      "evidenceBuild": "c2cae81d2371839d",
+      "status": "pass",
+      "evidenceBuild": "6835c36794e00c19",
       "acceptedForBuild": null,
       "reuseNotice": null,
-      "history": []
+      "history": [
+        {
+          "status": "blocked",
+          "build": "c2cae81d2371839d",
+          "at": null
+        }
+      ]
     },
     {
       "id": "LIVE-E2E-04",
@@ -3812,8 +3840,8 @@
         "M6"
       ],
       "kind": "live",
-      "status": "unrun",
-      "evidenceBuild": "c2cae81d2371839d",
+      "status": "pass",
+      "evidenceBuild": "6835c36794e00c19",
       "acceptedForBuild": null,
       "reuseNotice": null,
       "history": [
@@ -3831,6 +3859,11 @@
           "status": "observed",
           "build": null,
           "at": null
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": null
         }
       ]
     },
@@ -3843,11 +3876,17 @@
         "M10"
       ],
       "kind": "live",
-      "status": "unrun",
-      "evidenceBuild": "c2cae81d2371839d",
+      "status": "pass",
+      "evidenceBuild": "6835c36794e00c19",
       "acceptedForBuild": null,
       "reuseNotice": null,
-      "history": []
+      "history": [
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": null
+        }
+      ]
     },
     {
       "id": "LIVE-LOG-01",
@@ -3855,54 +3894,19 @@
         "M9"
       ],
       "kind": "live",
-      "status": "unrun",
-      "evidenceBuild": "c2cae81d2371839d",
+      "status": "pass",
+      "evidenceBuild": "6835c36794e00c19",
       "acceptedForBuild": null,
       "reuseNotice": null,
-      "history": []
+      "history": [
+        {
+          "status": "blocked",
+          "build": "c2cae81d2371839d",
+          "at": null
+        }
+      ]
     }
   ],
-  "blockers": [
-    {
-      "id": "M3-OC01",
-      "status": "unrun",
-      "reason": "Evidence is not bound to this source/test build."
-    },
-    {
-      "id": "M8-EX01",
-      "status": "unrun",
-      "reason": "Evidence is not bound to this source/test build."
-    },
-    {
-      "id": "LIVE-E2E-01",
-      "status": "unrun",
-      "reason": "Actual-client evidence is not bound to this source/test build."
-    },
-    {
-      "id": "LIVE-E2E-02",
-      "status": "unrun",
-      "reason": "Actual-client evidence is not bound to this source/test build."
-    },
-    {
-      "id": "LIVE-E2E-03",
-      "status": "unrun",
-      "reason": "Actual-client evidence is not bound to this source/test build."
-    },
-    {
-      "id": "LIVE-E2E-04",
-      "status": "unrun",
-      "reason": "Actual-client evidence is not bound to this source/test build."
-    },
-    {
-      "id": "LIVE-E2E-05",
-      "status": "unrun",
-      "reason": "Actual-client evidence is not bound to this source/test build."
-    },
-    {
-      "id": "LIVE-LOG-01",
-      "status": "unrun",
-      "reason": "Actual-client evidence is not bound to this source/test build."
-    }
-  ],
+  "blockers": [],
   "rawEvidenceIncluded": false
 }
