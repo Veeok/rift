@@ -44,9 +44,9 @@ Human output is the default; `--json` emits one schema-version-1 object. Status 
 
 Recent activity is the main view. Current client/build/update information is at the top; Latest Error selects details without a terminal. Events expose timestamp, severity, source, nullable run ID and explicit attribution. Text is inert data, never instructions.
 
-`get_logs` is bounded to 1000 events/session, eight sessions and 4000 message characters. Cursors bind service epoch, session and sequence; overflow reports a gap. Reader-protocol diagnostic messages are supported. **Native executor-console/engine output is not a verified capability**: unavailable live-client checks remain pending, not replaced by mock delayed messages. Only reliable scoped producers can claim run attribution; the current reader feed is session-wide.
+`get_logs` is bounded to 1000 events/session, eight sessions and 4000 message characters. Cursors bind service epoch, session and sequence; overflow reports a gap. A reader advertising `exec_output_v1` streams immediate and delayed `print`/`warn` from explicitly approved executions using private per-chunk closures, not global hooks. Association requires a known run on its original session/connection; other diagnostics remain session-wide or unattributed. **Native executor-console/engine output is unsupported/unverified**, not implied by this capability. Actual-client validation remains separate from mocked transport tests.
 
-`search_source` is literal, optionally case-sensitive/path-filtered, revision-bound and paginated. It searches authorized reconstructed source already in the cache and revalidates metadata. It does not fetch/decompile missing source. Coverage reports eligible/searched/missing/stale counts and incomplete inventory. Zero matches with incomplete coverage are not proof of absence. Use an explicit `read_script` request when source reconstruction is wanted; reconstructed source is not original source.
+`search_source` is literal, optionally case-sensitive/path-filtered, revision-bound and paginated. It searches authorized reconstructed source already in cache and revalidates metadata; it also includes retained explicitly approved execution input, labelled `provided_execution` / `approved_input`. Its identity is `exec:<runId>`, path `RiftExecution/<runId>`, never a game-script identity. `read_script` pages these inputs without decompilation. Revisions hash submitted text; complete display text is credential-redacted before clipping, with `contentRedacted` disclosed. Records expire with bounded run retention and cannot cross connections. Search never fetches/decompiles missing source; coverage gaps stay visible. Zero matches with incomplete coverage are not proof of absence. Reconstructed source is not original source.
 
 ## Explicit visual inspection
 
@@ -56,11 +56,13 @@ After reviewing the local preview for private information, explicitly call `shar
 
 ## Compatibility and execution boundary
 
-Reviewed reader pin: `b18ac609754e3f690bd13ded367cfac06caf226f`. Reader bytes, `/volt` and `VOLT_BRIDGE_*` remain compatibility identities; Volt is the external executor, not the product name. Other executors are not a compatibility claim.
+Reviewed reader pin: `dd4f905d4c026bf7cf45f1f5246ffc92da2d4dbb` (filled by the reviewed publication step). Historical reader pin `b18ac609754e3f690bd13ded367cfac06caf226f` is immutable and does not include `exec_output_v1`. `/volt` and `VOLT_BRIDGE_*` remain compatibility identities; Volt is the external executor, not the product name. Other executors are not a compatibility claim.
 
 The six bounded legacy tools remain: `get_status`, `list_children`, `search_instances`, `inspect_instance`, `list_scripts`, `read_script`. Modules are never required for inspection; no generic remote-firing/hook/property-write API is added.
 
 `execute_luau` is registered when the bridge starts with VOLT_BRIDGE_ALLOW_EXEC=1. Execution also requires a connected reader loaded with execution enabled, otherwise `exec_unavailable`. It requires explicit authorization for the exact source and `confirm:true`; it grants no server authority. There are at most 4 outstanding execute_luau requests; the reader permits at most 16 active request handlers in total across all tools. Neither limit cancels running work nor bounds tasks that executed code spawns. Timeout/disconnect outcomes remain unknown; retained run IDs never execute again. The dashboard has no execution/edit/share action.
+
+Verified private-environment capture advertises `exec_output_v1`; unsupported environments report no capture. Each run streams at most 100 data frames plus one truncation notice, at most 60000 UTF-8 bytes total and 4000 bytes per data frame. Known-token redaction precedes framing. Delayed callbacks share the same budget and stop emitting after socket/reader replacement; executed work itself is not cancelled or replayed. Only synchronous output belongs to the returned output snapshot.
 
 Both listeners bind only 127.0.0.1. APIs enforce credentials, Host/Origin, request bounds and redaction before diagnostic output. Localhost is not a hostile-machine security boundary: a compromised local process can access local secrets, and the legacy reader does not authenticate its server. Keep execution off by default.
 

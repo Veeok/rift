@@ -26,7 +26,7 @@ export class ActivityStore {
 	}
 	disconnect(id:string):void { this.active.delete(id);if(this.current===id)this.current=null; }
 	select(id:string|null):void { this.current=id&&this.active.has(id)?id:null; }
-	append(input:{sessionId:string;message:string;severity?:string;timestamp?:string;source?:string;runId?:string;reliableRun?:boolean;attribution?:'session-wide'|'unattributed';details?:unknown}):ActivityEvent {
+	append(input:{sessionId:string;message:string;severity?:string;timestamp?:string;source?:string;runId?:string;reliableRun?:boolean;attribution?:'session-wide'|'unattributed';truncated?:boolean;details?:unknown}):ActivityEvent {
 		const session=this.sessions.get(input.sessionId);
 		if(!session || !this.active.has(input.sessionId)) throw new Error('event belongs to an inactive or expired session');
 		if(typeof input.message!=='string')throw new Error('message must be text');
@@ -38,7 +38,7 @@ export class ActivityStore {
 		const row:ActivityEvent={sessionId:input.sessionId,seq:++session.seq,timestamp,receivedAt,
 			severity:input.severity==='error'?'error':input.severity==='warn'?'warn':'info',source:this.redact(input.source??'unknown').slice(0,120),
 			message:raw.slice(0,max),runId,attribution:runId?'run':input.attribution??'unattributed',
-			details:detailsText.length>8000?{truncated:true}:redactValue(input.details??null,this.redact),truncated:raw.length>max};
+			details:detailsText.length>8000?{truncated:true}:redactValue(input.details??null,this.redact),truncated:input.truncated===true||raw.length>max};
 		session.rows.push(row);
 		while(session.rows.length>(this.options.maxEvents??1000))session.rows.shift();
 		return row;

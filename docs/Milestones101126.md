@@ -15,8 +15,8 @@ No installs or additional headless model tests. Preserve credentials, unrelated 
 | M5/M7 | Fresh browser 8/8 parent-reviewed after surgical Karpathy/Web Guidelines fixes | Compact original activity-first UI; client/latest error discoverable, inert long messages, distinct-client reconnect, keyboard and narrow-window observations |
 | M6 | Actual owner-approved whole-window/crop images reached the configured model | Explicit Roblox client window choice, local preview/crop, separate confirmed typed image; no universal provider-route or cryptographic session-association claim |
 | M8 | Canonical rename done; final source export and approved GitHub update | Exact-install migration, old/new conflicts, credential-preserving rollback, clean local export |
-| M9 | Stores/transport pass; actual background feed/attribution blocked by unchanged reader | Bounded session/sequence cursors, delayed reader-protocol messages, honest attribution, gaps and redaction; no unsupported native-console claim |
-| M10 | Cache search passes; actual diagnostic source trace blocked by missing feed | Authorized cached source only, literal/case/path filters, revisions, bounded pagination, missing/stale/incomplete coverage; no implicit reconstruction |
+| M9 | Bounded approved-execution producer and host association implemented; new-pin actual-client validation pending | Bounded session/sequence cursors, delayed `exec_output_v1` messages, explicit known-run/session/connection attribution, gaps and redaction; no native-console claim |
+| M10 | Cached source and explicit provided-input tracing pass locally; actual diagnostic trace pending | Authorized cached source plus `provided_execution`, literal/case/path filters, raw-input revisions, redaction before clipping, bounded pagination and honest incomplete coverage; no implicit reconstruction |
 
 ## Verification inventory
 
@@ -27,7 +27,7 @@ No installs or additional headless model tests. Preserve credentials, unrelated 
 - Completed non-model baseline evidence is 127/127: mock99, refinement7, loader7, execution14. Ten separate generation cases were not rerun (zero budget): the broader catalog was 127/137 with ten unrun. The initial aggregate parser mistakes and interrupted attempt remain recorded.
 - Original publication checks passed 12/12 before the scope correction; regenerate/recheck the corrected local export before crediting its final build.
 - Earlier cancelled/time-out browser attempts remain history. The owner-approved retry observed eight actual-browser cases, including corrected visible long-error screenshots. Any changed UI requires fresh observations/component hashes; earlier screenshots are never relabelled as the changed build.
-- Actual client checks now distinguish three observed passes (shared identity, typed whole/crop image perception, reconnect isolation) from three blocked checks (delayed background warning, its source trace, output-source attribution). The unchanged reviewed reader has no observed background diagnostic producer; no mock feed is substituted. See `test/results/LiveClientFinal101126.json`.
+- Historical actual-client evidence distinguishes three observed passes (shared identity, typed whole/crop image perception, reconnect isolation) from three blocked checks (delayed background warning, its source trace, output-source attribution). The exact harmless delayed-warning probe failed on the old reader; the owner approved the bounded reader fix and a newly reviewed immutable pin. All final-build live statuses must be rebound or rerun, not relabelled from that historical build. See `test/results/LiveClientFinal101126.json` and `LiveDelayedWarningProbe101126.json`.
 
 ## Handoff / preservation
 

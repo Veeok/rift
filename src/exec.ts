@@ -14,6 +14,7 @@
 import { Bridge, BridgeError } from "./bridge.js";
 import { LIMITS } from "./limits.js";
 import { log } from "./log.js";
+import { createHash } from "node:crypto";
 
 export type ExecStatus = "completed" | "compile_error" | "runtime_error" | "duplicate" | "timeout" | "disconnected" | "rejected";
 
@@ -49,6 +50,15 @@ interface Retained {
 	sourceHash: string;
 }
 
+export interface ExecutionSource {
+	runId: string;
+	sessionId: string;
+	connectionId: string;
+	source: string;
+	revision: string;
+	observedAt: string;
+}
+
 function clampText(v: unknown, max: number): string | null {
 	if (typeof v !== "string") return null;
 	return v.length > max ? v.slice(0, max) : v;
@@ -57,6 +67,7 @@ function clampText(v: unknown, max: number): string | null {
 export class ExecService {
 	private readonly retained = new Map<string, Retained>();
 	private readonly order: string[] = [];
+	private readonly sources = new Map<string, ExecutionSource>();
 	private inFlight = 0;
 	private seq = 0;
 
@@ -95,7 +106,7 @@ export class ExecService {
 	private evict(): void {
 		while (this.order.length > LIMITS.execMaxRetainedResults) {
 			const id = this.order.shift();
-			if (id !== undefined) this.retained.delete(id);
+			if (id !== undefined) { this.retained.delete(id); this.sources.delete(id); }
 		}
 	}
 
@@ -140,6 +151,11 @@ export class ExecService {
 	/** Look up a retained run without executing anything. */
 	lookup(runId: string): ExecOutcome | null {
 		return this.retained.get(runId)?.outcome ?? null;
+	}
+
+	/** Only explicitly approved input, scoped to the socket that received it. Not game source. */
+	sourceEntries(sessionId: string, connectionId: string): ExecutionSource[] {
+		return [...this.sources.values()].filter(source => source.sessionId === sessionId && source.connectionId === connectionId).map(source => ({...source}));
 	}
 
 	list(): Array<{ runId: string; status: ExecStatus; executed: boolean; at: string }> {
@@ -225,6 +241,8 @@ export class ExecService {
 		outcome.reader = { session: reader.session, connectionId: reader.connectionId, placeId: reader.placeId, jobId: reader.jobId };
 
 		const deadlineMs = Math.min(Math.max(opts.deadlineMs ?? LIMITS.execDefaultDeadlineMs, 1_000), LIMITS.execMaxDeadlineMs);
+		this.sources.set(runId, {runId, sessionId: reader.session, connectionId: reader.connectionId, source: text,
+			revision: createHash('sha256').update(text).digest('hex'), observedAt: outcome.sentAt});
 		this.inFlight += 1;
 		try {
 			const raw = (await this.bridge.request("exec", { runId, source: text }, { deadlineMs })) as Record<string, unknown>;

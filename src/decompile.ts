@@ -245,7 +245,7 @@ export interface SourcePage {
 	text: string;
 }
 
-export function pageSource(entry: CacheEntry, startLine: number, maxLines: number, maxChars: number): SourcePage {
+export function pageSource(entry: Pick<CacheEntry, 'lines'>, startLine: number, maxLines: number, maxChars: number): SourcePage {
 	const total = entry.lines.length;
 	const start = Math.min(Math.max(1, startLine), Math.max(1, total));
 	const out: string[] = [];

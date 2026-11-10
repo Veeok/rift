@@ -4,6 +4,7 @@ export interface SourceRecord {id:string;name?:string;path:string;source?:string
 export interface SourceInventory {complete:boolean;knownTotal?:number;reason?:string|null}
 const digest=(value:string)=>createHash('sha256').update(value).digest('hex');
 export class SourceIndex {
+	constructor(private readonly redact:(source:string)=>string=source=>source){}
 	private sessionId:string|null=null;
 	private records:SourceRecord[]=[];
 	private version=0;
@@ -29,21 +30,21 @@ export class SourceIndex {
 		const fingerprint=digest(JSON.stringify([this.sessionId,this.version,args.query,args.caseSensitive===true,args.pathFilter??'']));
 		let offset=0;
 		if(args.cursor){try{const c=JSON.parse(Buffer.from(args.cursor,'base64url').toString('utf8'));if(c[0]!==fingerprint||!Number.isSafeInteger(c[1])||c[1]<0)throw new Error();offset=c[1];}catch{throw new Error('cursor query/revision snapshot changed; start the search again');}}
-		const items:Array<{scriptId:string;name:string;path:string;revision:string;line:number;excerpt:string;sourceKind:string;freshness:string;observedAt:string|null}>=[];
+		const items:Array<{scriptId:string;name:string;path:string;revision:string;line:number;excerpt:string;contentRedacted:boolean;sourceKind:string;freshness:string;observedAt:string|null}>=[];
 		let searchedScripts=0,missingSource=0,staleSource=0,capped=false;
 		const needle=args.caseSensitive?args.query:args.query.toLowerCase();
 		for(const r of eligible){
 			if(r.stale){staleSource++;continue;}
 			if(typeof r.source!=='string'){missingSource++;continue;}
 			searchedScripts++;
-			const lines=r.source.split(/\r?\n/);
+			const displaySource=this.redact(r.source),lines=displaySource.split(/\r?\n/);
 			for(let n=0;n<lines.length;n++){
 				const text=lines[n]!,index=(args.caseSensitive?text:text.toLowerCase()).indexOf(needle);
 				if(index<0)continue;
 				if(items.length===10_000){capped=true;break;}
 				const from=Math.max(0,index-40);
 				items.push({scriptId:r.id,name:r.name??r.path.split('/').at(-1)??r.id,path:r.path,revision:r.revision!,line:n+1,
-					excerpt:(from?'…':'')+text.slice(from,from+240)+(text.length>from+240?'…':''),sourceKind:r.sourceKind??'owned_original',freshness:r.freshness??'owned_snapshot',observedAt:r.observedAt??null});
+					excerpt:(from?'…':'')+text.slice(from,from+240)+(text.length>from+240?'…':''),contentRedacted:displaySource!==r.source,sourceKind:r.sourceKind??'owned_original',freshness:r.freshness??'owned_snapshot',observedAt:r.observedAt??null});
 			}
 		}
 		const limit=Math.min(200,Math.max(1,args.limit??50)),page=items.slice(offset,offset+limit),more=offset+page.length<items.length;
