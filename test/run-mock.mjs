@@ -6,7 +6,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import net from "node:net";
 import os from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { CATALOG } from "./catalog.mjs";
 import { RESULTS, ROOT, TMP, Recorder, templateBuild, fakeBridge, portOpen, sleep, startBridge, startMockVolt, stubReader, testToken, waitFor } from "./lib.mjs";
 
@@ -61,7 +61,7 @@ let B = await startBridge({ port: P.bridge, tokenFile, log: (s) => (logs.bridge 
 await T("SET-04", async (check) => {
 	const res = B.init.result;
 	check("protocol 2025-11-25", res.protocolVersion === "2025-11-25", res.protocolVersion);
-	check("serverInfo volt-bridge", res.serverInfo?.name === "volt-bridge", res.serverInfo);
+	check("serverInfo Rift", res.serverInfo?.name === "Rift", res.serverInfo);
 	check("instructions mention untrusted", /untrusted/i.test(res.instructions ?? ""));
 	check("instructions forbid embedding ids", /never embed/i.test(res.instructions ?? ""));
 	return { actual: { protocolVersion: res.protocolVersion, serverInfo: res.serverInfo, instructionsChars: res.instructions?.length } };
@@ -427,16 +427,17 @@ await T("SET-09", async (check) => {
 await T("SET-11", async (check) => {
 	const txt = readFileSync(join(ROOT, "opencode.example.jsonc"), "utf8");
 	const json = JSON.parse(txt.replace(/^\s*\/\/.*$/gm, "").replace(/,(\s*[}\]])/g, "$1"));
-	const v = json.mcp?.servers?.volt;
+	const v = json.mcp?.servers?.rift;
 	check("parses as JSONC", !!json);
 	check("type local", v?.type === "local");
 	check("node command to dist/index.js", v?.command?.[0] === "node" && /dist\\index\.js$/.test(v?.command?.[1] ?? ""));
 	check("disabled false", v?.disabled === false);
+	check("example keeps execution opt-in", v?.environment?.VOLT_BRIDGE_ALLOW_EXEC === undefined, v?.environment?.VOLT_BRIDGE_ALLOW_EXEC);
+	check("example uses rift rather than a legacy volt entry", !!v && json.mcp?.servers?.volt === undefined);
 	check("no model/provider keys", !("model" in json) && !("providers" in json) && !("provider" in json));
 	check("instructions array", Array.isArray(json.instructions));
-	// .opencode/ is untracked in git, so prove the local state directly.
-	// The owner approved registering this bridge under mcp.servers.rift with execution opt-in.
-	const cfgPath = join(ROOT, "..", "..", ".opencode", "opencode.json");
+	// A worktree may inspect the preserved original registration explicitly, without copying/editing it.
+	const cfgPath = process.env.RIFT_BASELINE_CONFIG ? resolve(process.env.RIFT_BASELINE_CONFIG) : join(ROOT, "..", "..", ".opencode", "opencode.json");
 	const cfgText = readFileSync(cfgPath, "utf8");
 	const cfg = JSON.parse(cfgText);
 	const servers = Object.keys(cfg.mcp?.servers ?? {});
@@ -449,7 +450,7 @@ await T("SET-11", async (check) => {
 	);
 	check("no server entry named volt remains", !servers.includes("volt"), servers);
 	check("no bridge token stored in the config", !/VOLT_BRIDGE_TOKEN/.test(cfgText));
-	return { actual: { server: v, instructions: json.instructions, servers, allowExec: rift?.environment?.VOLT_BRIDGE_ALLOW_EXEC } };
+	return { actual: { server: v, instructions: json.instructions, servers, allowExec: rift?.environment?.VOLT_BRIDGE_ALLOW_EXEC, registrationScope: process.env.RIFT_BASELINE_CONFIG ? "explicit preserved baseline config (read-only)" : "local project config" } };
 });
 
 await T("SET-10", async (check) => {
@@ -1242,11 +1243,24 @@ await T("EXEC-04", async (check) => {
 		check("reports timeout", slow.json?.status === "timeout", slow.json?.status);
 		check("unknown outcome, may still be running", slow.json?.unknownOutcome === true && slow.json?.clientMayStillBeRunning === true);
 		check(
+			"timeout notice does not falsely deny execution",
+			/unknown/i.test(slow.json?.notice ?? "") && /may still be running/i.test(slow.json?.notice ?? "") &&
+				!/did not execute/i.test(slow.json?.notice ?? ""),
+			slow.json?.notice,
+		);
+		check(
 			"does not claim cancellation",
 			/UNKNOWN/.test(slow.json?.note ?? "") && /does not cancel/.test(slow.json?.note ?? ""),
 			slow.json?.note,
 		);
 		check("deadline honoured", elapsed >= 900 && elapsed < 2900, elapsed);
+		const duplicate = await Be.call("execute_luau", { source: "error('must not execute')", confirm: true, runId: slow.json?.runId });
+		check("retained timeout stays unknown without replay", duplicate.json?.status === "duplicate" && duplicate.json?.executed === false &&
+			duplicate.json?.unknownOutcome === true && duplicate.json?.output === null, duplicate.json);
+		check("duplicate preserves original uncertainty instead of claiming it ran", /UNKNOWN/.test(duplicate.json?.note ?? "") &&
+			!/already ran/i.test(duplicate.json?.note ?? ""), duplicate.json?.note);
+		check("duplicate timeout notice remains uncertain", /unknown/i.test(duplicate.json?.notice ?? "") &&
+			!/did not execute/i.test(duplicate.json?.notice ?? ""), duplicate.json?.notice);
 		// The yielding chunk finishes after the bridge gave up; its late result must be dropped, not misfiled.
 		await sleep(3500);
 		const after = await Be.call("execute_luau", { source: "print('after timeout') return 'ok'", confirm: true });

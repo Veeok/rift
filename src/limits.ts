@@ -1,5 +1,5 @@
-export const BRIDGE_NAME = "volt-bridge";
-export const BRIDGE_VERSION = "0.2.0";
+export const BRIDGE_NAME = "Rift";
+export const BRIDGE_VERSION = "0.3.0";
 export const PROTOCOL_VERSION = 1;
 export const LISTEN_HOST = "127.0.0.1"; // Never configurable: loopback only.
 export const WS_PATH = "/volt";

@@ -83,7 +83,7 @@ export const CATALOG = [
 	t("SET-08", "mock", "Port conflict reported and retried", ["R18"], "with the port occupied get_status.listener = error/EADDRINUSE with fix text while MCP keeps serving; after release state becomes listening within 20 s"),
 	t("SET-09", "mock", "Missing token disables listener explicitly", ["R05", "R14"], "get_status.listener.state=disabled with reason naming the token file; tools/list still works; port closed"),
 	t("SET-10", "mock", "Clean shutdown on stdin close", ["R15"], "process exits 0 within 5 s, reader receives bye, port is closed afterwards"),
-	t("SET-11", "mock", "OpenCode V2 config registration shape", ["R08"], "opencode.example.jsonc parses as JSONC; mcp.servers.volt is type local with node command, disabled false, no model/provider keys; the local .opencode/opencode.json registers an owner-approved mcp.servers.rift (local, enabled, VOLT_BRIDGE_ALLOW_EXEC=1), has no server named volt and stores no bridge token", false),
+	t("SET-11", "mock", "OpenCode V2 config registration shape", ["R08"], "opencode.example.jsonc parses as JSONC; mcp.servers.rift is type local with node command, disabled false, execution opt-in absent by default, no legacy volt entry and no model/provider keys; the local .opencode/opencode.json registers an owner-approved mcp.servers.rift (local, enabled, VOLT_BRIDGE_ALLOW_EXEC=1), has no server named volt and stores no bridge token", false),
 
 	// ---------------- AUTH ----------------
 	t("AUTH-01", "mock", "Valid token authenticates", ["R16", "R13", "T1"], "auth_ok with connectionId and session; get_status connected=true with that session, place and executor"),

@@ -31,7 +31,7 @@ export function parsePort(raw: string | undefined): number {
 	if (raw === undefined || raw.trim() === "") return DEFAULT_PORT;
 	const port = Number(raw);
 	if (!Number.isInteger(port) || port < 1024 || port > 65535) {
-		throw new Error(`VOLT_BRIDGE_PORT must be an integer 1024-65535, got "${raw}"`);
+		throw new Error('VOLT_BRIDGE_PORT must be an integer 1024-65535.');
 	}
 	return port;
 }
@@ -76,7 +76,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, envFile = DEFAU
 		if (TOKEN_PATTERN.test(raw)) token = raw;
 		else tokenError = `token file ${tokenFile} does not contain a valid token (32-256 chars of [A-Za-z0-9_-])`;
 	} catch {
-		tokenError = `token file ${tokenFile} not found; run "npm run setup" in tools/volt-bridge`;
+		tokenError = `token file ${tokenFile} not found; run "rift setup --apply" in tools/rift-bridge`;
 	}
 	return { port, tokenFile, token, tokenError, logLevel: env.VOLT_BRIDGE_LOG_LEVEL, allowExec: parseAllowExec(env.VOLT_BRIDGE_ALLOW_EXEC) };
 }

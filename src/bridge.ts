@@ -118,6 +118,7 @@ export class Bridge {
 	private lastSession: string | null = null;
 	private lastDisconnect: { at: string; reason: string } | null = null;
 	private sessionListeners: SessionListener[] = [];
+	private readerLogListeners = new Set<(event: Record<string, unknown>) => void>();
 	private readonly tokenDigest: Buffer | null;
 	private listeningSince: number | null = null;
 
@@ -134,6 +135,11 @@ export class Bridge {
 
 	onSessionChange(fn: SessionListener): void {
 		this.sessionListeners.push(fn);
+	}
+
+	onReaderLog(fn: (event: Record<string, unknown>) => void): () => void {
+		this.readerLogListeners.add(fn);
+		return () => { this.readerLogListeners.delete(fn); };
 	}
 
 	start(): void {
@@ -181,7 +187,7 @@ export class Bridge {
 		const code = err.code ?? "UNKNOWN";
 		const message =
 			code === "EADDRINUSE"
-				? `port ${this.port} is already in use on ${LISTEN_HOST} (another volt-bridge instance or another app). ` +
+				? `port ${this.port} is already in use on ${LISTEN_HOST} (another Rift instance or another app). ` +
 					`Close it, or set VOLT_BRIDGE_PORT and re-run "npm run setup" to render a matching bootstrap.`
 				: `cannot listen on ${LISTEN_HOST}:${this.port}: ${err.message}`;
 		this.listener = { state: "error", port: this.port, code, message, retryInMs: LIMITS.listenRetryMs };
@@ -413,7 +419,9 @@ export class Bridge {
 				this.send(conn.ws, { type: "pong", t: msg.t }).catch(() => undefined);
 				return;
 			case "log":
-				log.info(`reader: ${clampStr(msg.level, 8)} ${clampStr(msg.message, 500)}`);
+				for (const listener of this.readerLogListeners) listener(msg);
+				// The common sink redacts the complete message before applying its output bound.
+				log.info(`reader: ${clampStr(msg.level, 8)} ${typeof msg.message === 'string' ? msg.message : ''}`);
 				return;
 			case "chunk":
 				this.onChunk(msg);
@@ -503,7 +511,7 @@ export class Bridge {
 		const conn = this.active;
 		if (!conn) {
 			return Promise.reject(
-				new BridgeError("not_connected", "no authenticated Volt reader; run the bootstrap in Volt (see tools/volt-bridge/README.md)", true),
+				new BridgeError("not_connected", "no authenticated Volt reader; run the bootstrap in Volt (see tools/rift-bridge/README.md)", true),
 			);
 		}
 		if (this.pending.size >= LIMITS.maxPendingRequests) {

@@ -1,7 +1,7 @@
 # Publication boundary
 
-This repository is an explicit export of the Rift project only. It does not contain the parent RobloxTeam repository or history.
+Explicit local Rift source export only: no parent repository/history, credentials, raw logs, screenshots or reconstructed game source. Nothing is committed or published by generation.
 
-Reader template build: bdbf0a0fc595. Source was exported without credentials. Public reports omit raw observations/evidence and preserve historical statuses instead.
+Reader template build: bdbf0a0fc595. Historical report statuses are preserved; current M3–M10 results have their own build and live/blocked denominators. Local export generation does not establish a new live compatibility pass.
 
-Local-machine paths in inherited test configuration are redacted placeholders, not portable defaults. Configure these before running the headless/live harnesses. The Node bridge itself resolves .env relative to its package root.
+Private Windows paths in inherited test configurations are redacted placeholders. Runtime resolves .env from the package root. Legacy reader protocol/environment names remain intentional compatibility aliases.

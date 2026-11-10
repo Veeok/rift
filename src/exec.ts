@@ -172,7 +172,7 @@ export class ExecService {
 					status: "duplicate",
 					executed: false,
 					duplicateOfPreviousRun: true,
-					note: `runId ${proposedId} already ran; the original outcome is returned and nothing was executed again.`,
+					note: `runId ${proposedId} is already recorded; nothing was executed again. Original outcome: ${prior.outcome.note}`,
 				};
 			}
 			const refused = this.baseOutcome(proposedId, text.length);

@@ -1,0 +1,3215 @@
+{
+  "notice": "Source-candidate validation snapshot; raw source/logs/screenshots and credentials are excluded. Publication does not imply pending live checks passed.",
+  "status": "VALIDATION_PENDING",
+  "build": {
+    "serviceVersion": "0.3.0",
+    "serviceBuild": "c2cae81d2371839d",
+    "expectedReaderBuild": "bdbf0a0fc595",
+    "artifactDigest": "bbdfa84f4b3731568f94bb51928a6d64b0341b6ba45029d99d79a9bb1c6c2b15",
+    "testDefinitionDigest": "12498845f0ae3d6455cf1072bc127a97ad6e382ad93124d24db65bf311c74a7d"
+  },
+  "totals": {
+    "automated": {
+      "passed": 56,
+      "total": 56,
+      "failed": 0,
+      "pending": 0,
+      "blocked": 0,
+      "unrun": 0
+    },
+    "live": {
+      "passed": 3,
+      "total": 6,
+      "failed": 0,
+      "pending": 0,
+      "blocked": 3,
+      "unrun": 0
+    },
+    "uniqueOverall": {
+      "passed": 59,
+      "total": 62,
+      "failed": 0,
+      "pending": 0,
+      "blocked": 3,
+      "unrun": 0
+    }
+  },
+  "milestones": {
+    "M3": {
+      "automated": {
+        "passed": 10,
+        "total": 10,
+        "failed": 0,
+        "pending": 0,
+        "blocked": 0,
+        "unrun": 0
+      },
+      "live": {
+        "passed": 2,
+        "total": 2,
+        "failed": 0,
+        "pending": 0,
+        "blocked": 0,
+        "unrun": 0
+      }
+    },
+    "M4": {
+      "automated": {
+        "passed": 8,
+        "total": 8,
+        "failed": 0,
+        "pending": 0,
+        "blocked": 0,
+        "unrun": 0
+      },
+      "live": {
+        "passed": 0,
+        "total": 0,
+        "failed": 0,
+        "pending": 0,
+        "blocked": 0,
+        "unrun": 0
+      }
+    },
+    "M5/M7": {
+      "automated": {
+        "passed": 10,
+        "total": 10,
+        "failed": 0,
+        "pending": 0,
+        "blocked": 0,
+        "unrun": 0
+      },
+      "live": {
+        "passed": 0,
+        "total": 0,
+        "failed": 0,
+        "pending": 0,
+        "blocked": 0,
+        "unrun": 0
+      }
+    },
+    "M6": {
+      "automated": {
+        "passed": 6,
+        "total": 6,
+        "failed": 0,
+        "pending": 0,
+        "blocked": 0,
+        "unrun": 0
+      },
+      "live": {
+        "passed": 2,
+        "total": 2,
+        "failed": 0,
+        "pending": 0,
+        "blocked": 0,
+        "unrun": 0
+      }
+    },
+    "M8": {
+      "automated": {
+        "passed": 6,
+        "total": 6,
+        "failed": 0,
+        "pending": 0,
+        "blocked": 0,
+        "unrun": 0
+      },
+      "live": {
+        "passed": 0,
+        "total": 0,
+        "failed": 0,
+        "pending": 0,
+        "blocked": 0,
+        "unrun": 0
+      }
+    },
+    "M9": {
+      "automated": {
+        "passed": 9,
+        "total": 9,
+        "failed": 0,
+        "pending": 0,
+        "blocked": 0,
+        "unrun": 0
+      },
+      "live": {
+        "passed": 1,
+        "total": 3,
+        "failed": 0,
+        "pending": 0,
+        "blocked": 2,
+        "unrun": 0
+      }
+    },
+    "M10": {
+      "automated": {
+        "passed": 8,
+        "total": 8,
+        "failed": 0,
+        "pending": 0,
+        "blocked": 0,
+        "unrun": 0
+      },
+      "live": {
+        "passed": 1,
+        "total": 2,
+        "failed": 0,
+        "pending": 0,
+        "blocked": 1,
+        "unrun": 0
+      }
+    }
+  },
+  "browserProvenance": {
+    "observedServiceBuild": "c2cae81d2371839d",
+    "observedSourceHashes": {
+      "dashboard/index.html": "e2a94e2ab49084268278f54649bc6d1a98954f62eb2f0ddc4e98fa3a0f82dff2",
+      "dashboard/app.js": "c14b4ed80dcfa240c117668da6b1d5e5e48aefa8bfd572fb8047f1ca2289cf6a",
+      "dashboard/style.css": "0606470687c8c5583a670552a2747fe3a0409fdcfeac0f383d7d61e5ffa31ca7"
+    },
+    "reusedForBuild": null,
+    "verification": null
+  },
+  "tests": [
+    {
+      "id": "M6-01",
+      "milestones": [
+        "M6"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M6-02",
+      "milestones": [
+        "M6"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M6-03",
+      "milestones": [
+        "M6"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M6-04",
+      "milestones": [
+        "M6"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M57-A01",
+      "milestones": [
+        "M5/M7"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M57-A02",
+      "milestones": [
+        "M5/M7"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M3-08",
+      "milestones": [
+        "M3"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "fail",
+          "build": null,
+          "at": "2026-11-10T13:10:54.126Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M4-07",
+      "milestones": [
+        "M4"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "fail",
+          "build": null,
+          "at": "2026-11-10T13:10:54.126Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M6-06",
+      "milestones": [
+        "M6"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "fail",
+          "build": null,
+          "at": "2026-11-10T13:10:54.126Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M3-09",
+      "milestones": [
+        "M3"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "fail",
+          "build": null,
+          "at": "2026-11-10T13:53:22.825Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:56:01.797Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M3-06",
+      "milestones": [
+        "M3"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:29:39.005Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M3-07",
+      "milestones": [
+        "M3"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:29:39.005Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M9-07",
+      "milestones": [
+        "M9"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:29:39.005Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M9-08",
+      "milestones": [
+        "M9"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:29:39.005Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M10-06",
+      "milestones": [
+        "M10"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "fail",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:29:39.005Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M9-01",
+      "milestones": [
+        "M9"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M9-02",
+      "milestones": [
+        "M9"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M9-03",
+      "milestones": [
+        "M9"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M9-04",
+      "milestones": [
+        "M9"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M9-05",
+      "milestones": [
+        "M9"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M9-06",
+      "milestones": [
+        "M9"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M10-01",
+      "milestones": [
+        "M10"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M10-02",
+      "milestones": [
+        "M10"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M10-03",
+      "milestones": [
+        "M10"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M10-04",
+      "milestones": [
+        "M10"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M10-05",
+      "milestones": [
+        "M10"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M9-R01",
+      "milestones": [
+        "M9"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M8-R01",
+      "milestones": [
+        "M8"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M4-R01",
+      "milestones": [
+        "M4"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M10-R01",
+      "milestones": [
+        "M10"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M10-R02",
+      "milestones": [
+        "M10"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M8-R02",
+      "milestones": [
+        "M8"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M3-01",
+      "milestones": [
+        "M3"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M3-02",
+      "milestones": [
+        "M3"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "fail",
+          "build": null,
+          "at": "2026-11-10T13:53:22.825Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:56:01.797Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M3-03",
+      "milestones": [
+        "M3"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M3-04",
+      "milestones": [
+        "M3"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M3-05",
+      "milestones": [
+        "M3"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M4-01",
+      "milestones": [
+        "M4"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M4-02",
+      "milestones": [
+        "M4"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M4-03",
+      "milestones": [
+        "M4"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M4-04",
+      "milestones": [
+        "M4"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M8-01",
+      "milestones": [
+        "M8"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M8-02",
+      "milestones": [
+        "M8"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M8-03",
+      "milestones": [
+        "M8"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M6-05",
+      "milestones": [
+        "M6"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M4-06",
+      "milestones": [
+        "M4"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T11:25:15.677Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T12:33:07.182Z"
+        },
+        {
+          "status": "pass",
+          "build": "04c520f86f888cc6",
+          "at": "2026-11-10T12:58:49.353Z"
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": "2026-11-10T13:26:24.883Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T13:56:02.149Z"
+        },
+        {
+          "status": "pass",
+          "build": "0750b48539bd8bec",
+          "at": "2026-11-10T14:16:54.791Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:00:11.233Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:43:55.241Z"
+        },
+        {
+          "status": "pass",
+          "build": "c2cae81d2371839d",
+          "at": "2026-11-10T15:49:04.697Z"
+        }
+      ]
+    },
+    {
+      "id": "M57-B01",
+      "milestones": [
+        "M5/M7"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": "c2cae81d2371839d",
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        }
+      ]
+    },
+    {
+      "id": "M57-B02",
+      "milestones": [
+        "M5/M7"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": "c2cae81d2371839d",
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        }
+      ]
+    },
+    {
+      "id": "M57-B03",
+      "milestones": [
+        "M5/M7"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": "c2cae81d2371839d",
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        }
+      ]
+    },
+    {
+      "id": "M57-B04",
+      "milestones": [
+        "M5/M7"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": "c2cae81d2371839d",
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        }
+      ]
+    },
+    {
+      "id": "M57-B05",
+      "milestones": [
+        "M5/M7"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": "c2cae81d2371839d",
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        }
+      ]
+    },
+    {
+      "id": "M57-B06",
+      "milestones": [
+        "M5/M7"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": "c2cae81d2371839d",
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        }
+      ]
+    },
+    {
+      "id": "M57-B07",
+      "milestones": [
+        "M5/M7"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": "c2cae81d2371839d",
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        }
+      ]
+    },
+    {
+      "id": "M57-B08",
+      "milestones": [
+        "M5/M7"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": "c2cae81d2371839d",
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "pending",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        }
+      ]
+    },
+    {
+      "id": "M3-OC01",
+      "milestones": [
+        "M3",
+        "M4"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "fail",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "fail",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "fail",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "pass",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        }
+      ]
+    },
+    {
+      "id": "M8-EX01",
+      "milestones": [
+        "M8"
+      ],
+      "kind": "automated",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "pass",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "fail",
+          "build": null,
+          "at": "2026-11-10T11:22:21.860Z"
+        }
+      ]
+    },
+    {
+      "id": "LIVE-E2E-01",
+      "milestones": [
+        "M3"
+      ],
+      "kind": "live",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": []
+    },
+    {
+      "id": "LIVE-E2E-02",
+      "milestones": [
+        "M9"
+      ],
+      "kind": "live",
+      "status": "blocked",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": []
+    },
+    {
+      "id": "LIVE-E2E-03",
+      "milestones": [
+        "M10"
+      ],
+      "kind": "live",
+      "status": "blocked",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": []
+    },
+    {
+      "id": "LIVE-E2E-04",
+      "milestones": [
+        "M6"
+      ],
+      "kind": "live",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": [
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        },
+        {
+          "status": "observed",
+          "build": null,
+          "at": null
+        }
+      ]
+    },
+    {
+      "id": "LIVE-E2E-05",
+      "milestones": [
+        "M3",
+        "M6",
+        "M9",
+        "M10"
+      ],
+      "kind": "live",
+      "status": "pass",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": []
+    },
+    {
+      "id": "LIVE-LOG-01",
+      "milestones": [
+        "M9"
+      ],
+      "kind": "live",
+      "status": "blocked",
+      "evidenceBuild": "c2cae81d2371839d",
+      "acceptedForBuild": null,
+      "reuseNotice": null,
+      "history": []
+    }
+  ],
+  "blockers": [
+    {
+      "id": "LIVE-E2E-02",
+      "status": "blocked",
+      "reason": "The unchanged reviewed reader pin has no observed background diagnostic producer/log-stream capability. Actual get_logs remains empty despite visible reader connection messages. A real delayed-warning observation requires an explicitly approved reader update or supported producer; synthetic log frames are not substituted."
+    },
+    {
+      "id": "LIVE-E2E-03",
+      "status": "blocked",
+      "reason": "No actual delayed diagnostic is available from the pinned reader, so it cannot honestly be traced to a cached client source line/revision. No unrelated game sources were bulk reconstructed to manufacture a trace."
+    },
+    {
+      "id": "LIVE-LOG-01",
+      "status": "blocked",
+      "reason": "Actual output-source support and attribution could not be validated: current reviewed pin reports no log-feed capability and retained events are0. Native executor-console/engine output remains unverified, never reported as supported or per-run attributed."
+    }
+  ],
+  "rawEvidenceIncluded": false
+}

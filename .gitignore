@@ -14,5 +14,8 @@ test/.tmp/
 !.env.example
 .publication/
 test/results/
+.unlazy/
+.checkpoints/
+.serena/
 VoltResults*.json
 RefinementResults*.json

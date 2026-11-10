@@ -12,8 +12,8 @@
     "servers": {
       "rift": {
         "type": "local",
-        "command": ["node", "C:\\path\\to\\rift\\dist\\index.js"],
-        "cwd": "C:\\path\\to\\rift",
+        "command": ["node", "C:\\path\\to\\project\\tools\\rift-bridge\\dist\\index.js", "--shared"],
+        "cwd": "C:\\path\\to\\project\\tools\\rift-bridge",
         "environment": {
           // Must match the port used by `npm run setup` (default 38917).
           "VOLT_BRIDGE_PORT": "38917",

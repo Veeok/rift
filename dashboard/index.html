@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11151f">
+  <meta name="color-scheme" content="dark light">
+  <title>Rift · Local inspection</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to inspection</a>
+  <header class="masthead"><div><span class="brand">RIFT</span><span class="eyebrow">LOCAL / INSPECTION</span></div><span class="local-label">Read-only workspace · no execution</span></header>
+  <section id="unlock" class="panel" aria-labelledby="unlock-title" hidden>
+    <h1 id="unlock-title">Unlock local inspection</h1>
+    <p>Use your local Rift token. It is sent only to this origin and is never saved by this page.</p>
+    <form id="login-form"><label for="token">Local token</label><input id="token" name="token" type="password" required autocomplete="off" spellcheck="false"><button type="submit">Unlock</button></form>
+    <p id="login-message" role="status"></p>
+  </section>
+  <main id="main" tabindex="-1">
+    <section class="overview panel" aria-labelledby="overview-title">
+      <div class="section-head"><div><p class="eyebrow">INSPECTION TARGET</p><h1 id="overview-title">No current client</h1></div><span id="health" class="badge">Connecting</span></div>
+      <p id="connection-note" role="status">Checking the local service…</p>
+      <dl id="identity" class="facts"></dl>
+      <details><summary>Reported capabilities · not independently verified</summary><pre id="capabilities">No current client</pre></details>
+      <div class="toolbar"><label for="session">Inspection session</label><select id="session"><option value="">Choose a session…</option></select><button id="refresh" type="button">Refresh / retry</button><span id="busy" role="status"></span></div>
+    </section>
+    <nav aria-label="Inspection views" class="nav"><a href="#activity" data-view="activity">Activity</a><a href="#source" data-view="source">Source &amp; Widgets</a><a href="#visuals" data-view="visuals">Visuals</a><a href="#diagnostics" data-view="diagnostics">Diagnostics</a></nav>
+    <p id="global-error" class="warning" role="alert" hidden></p>
+    <section id="activity" class="view" aria-labelledby="activity-title">
+      <div class="section-head"><div><p class="eyebrow">SESSION EVIDENCE</p><h2 id="activity-title">Activity</h2></div><p id="counts">No current activity</p></div>
+      <div class="toolbar"><label for="severity">Show</label><select id="severity"><option value="all">All events</option><option value="error">Errors only</option></select><button id="newest" type="button">Newest event</button><button id="latest-error" type="button">Latest Error</button></div>
+      <p>Newest first · up to 1,000 retained events in this page. Newest and Latest Error navigate loaded evidence, not events that have already expired.</p>
+      <p id="log-notice" class="warning" role="status"></p>
+      <div class="split"><section class="panel" aria-label="Recent events"><p id="log-empty">Waiting for a current session.</p><ol id="events" class="events" aria-label="Events, most recent first"></ol></section><section class="panel detail" aria-labelledby="event-title"><h3 id="event-title">Event detail</h3><p id="event-placeholder">Select an event to inspect its full evidence.</p><dl id="event-facts" class="facts"></dl><pre id="event-message"></pre><pre id="event-details"></pre></section></div>
+    </section>
+    <section id="source" class="view" aria-labelledby="source-title" hidden>
+      <p class="eyebrow">READ-ONLY EVIDENCE</p><h2 id="source-title">Source &amp; Widgets</h2>
+      <p>Connection heartbeat does not establish source or widget freshness. Labels and timestamps below are reported evidence, not a live-state guarantee.</p>
+      <div class="split"><section class="panel"><h3>Literal source search</h3><form id="source-form"><label for="query">Literal text</label><input id="query" name="query" required maxlength="2000" autocomplete="off"><label for="path-filter">Path filter (optional)</label><input id="path-filter" name="path-filter" autocomplete="off"><label class="check"><input id="case-sensitive" name="case-sensitive" type="checkbox" autocomplete="off">Case sensitive</label><button type="submit" data-current>Search source</button></form><p id="source-notice" role="status"></p><ul id="source-results" class="results"></ul><button id="source-more" type="button" hidden>Load more matches</button><h4>Selected source</h4><pre id="source-detail">No source selected.</pre></section>
+      <section class="panel"><h3>Widget / instance search</h3><form id="widget-form"><label for="widget-name">Instance name</label><input id="widget-name" name="widget-name" required autocomplete="off"><button type="submit" data-current>Find instances</button></form><p id="widget-notice" role="status"></p><ul id="widget-results" class="results"></ul><h4>Properties, attributes &amp; tags</h4><pre id="widget-detail">No instance selected.</pre></section></div>
+    </section>
+    <section id="visuals" class="view" aria-labelledby="visuals-title" hidden>
+      <p class="eyebrow">EXPLICIT LOCAL REVIEW</p><h2 id="visuals-title">Visuals</h2>
+      <p class="warning">Session match unverified; historical local preview. A window capture is not proof of the selected session’s state.</p>
+      <div class="split"><section class="panel"><h3>Choose a window</h3><button id="windows-refresh" type="button">Refresh candidate windows</button><p id="windows-notice" role="status">Refresh to list available windows. No window is selected automatically.</p><form id="capture-form"><label for="window">Capture target</label><select id="window" required><option value="">Choose a window…</option></select><fieldset><legend>Optional crop · window-relative integer pixels</legend><p>Leave all four fields empty for the whole window.</p><div class="crop"><label>X<input id="crop-x" name="crop-x" type="number" min="0" step="1" autocomplete="off"></label><label>Y<input id="crop-y" name="crop-y" type="number" min="0" step="1" autocomplete="off"></label><label>Width<input id="crop-width" name="crop-width" type="number" min="1" step="1" autocomplete="off"></label><label>Height<input id="crop-height" name="crop-height" type="number" min="1" step="1" autocomplete="off"></label></div></fieldset><button type="submit" data-current>Capture local preview</button></form><p id="capture-notice" role="status">Not captured. Nothing is shared.</p></section>
+      <section class="panel"><h3>Historical local preview</h3><img id="capture-image" alt="Local window capture for manual review; session match is unverified" hidden><pre id="capture-meta"></pre><button id="review-capture" type="button" hidden>I reviewed this local preview</button><div id="share-panel" hidden><p class="warning">Not shared yet. Sharing is MCP-only and requires your explicit confirmation. Review the window content for private information first.</p><label for="share-request">Copyable MCP request (select and copy)</label><textarea id="share-request" readonly rows="5" spellcheck="false"></textarea></div></section></div>
+    </section>
+    <section id="diagnostics" class="view panel" aria-labelledby="diagnostics-title" hidden><p class="eyebrow">LOCAL SERVICE</p><h2 id="diagnostics-title">Diagnostics</h2><button id="doctor" type="button">Run read-only diagnostics</button><p id="doctor-notice" role="status">Diagnostics have not been requested.</p><pre id="doctor-result"></pre></section>
+  </main>
+  <footer>Rift / local evidence, explicit boundaries. No edits, execution or browser sharing controls.</footer>
+</body>
+</html>

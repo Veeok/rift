@@ -1,16 +1,20 @@
 {
-  "name": "volt-bridge",
-  "version": "0.2.0",
+  "name": "rift-bridge",
+  "version": "0.3.0",
   "private": true,
-  "description": "Local read-only bridge between a Volt-executed Luau reader and OpenCode (MCP stdio).",
+  "description": "Rift: local Roblox client inspection, diagnostics, activity and explicit visual review for OpenCode.",
   "type": "module",
   "main": "dist/index.js",
+  "bin": { "rift": "dist/cli.js" },
   "engines": {
     "node": ">=20.12.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test --test-reporter=tap test/*.test.mjs",
+    "rift": "node dist/cli.js",
+    "serve": "node dist/cli.js serve",
     "setup": "node dist/setup.js",
     "start": "node dist/index.js"
   },

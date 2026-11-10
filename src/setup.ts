@@ -1,5 +1,5 @@
 // npm run setup [-- --rotate] [-- --port 38917] [-- --out <file>]
-// Creates the local connection token (if missing) and renders the token-filled Volt bootstrap.
+// Compatibility reader-only setup for Rift: reuses the local token and renders the Volt reader.
 // This is a CLI, not the MCP server, so printing to stdout is fine here.
 
 import { createHash, randomBytes } from "node:crypto";
@@ -43,7 +43,7 @@ const rendered = template.replace("__VOLT_BRIDGE_URL__", url).replace("__VOLT_BR
 if (/__VOLT_BRIDGE_(URL|TOKEN|BUILD)__/.test(rendered)) throw new Error("bootstrap template placeholders were not all replaced");
 
 const outArg = argValue("--out");
-const outFile = outArg ? resolve(outArg) : join(PACKAGE_ROOT, ".secrets", "volt-bootstrap.local.luau");
+const outFile = outArg ? resolve(outArg) : join(PACKAGE_ROOT, ".secrets", "rift-bootstrap.local.luau");
 mkdirSync(dirname(outFile), { recursive: true });
 writeFileSync(outFile, rendered, { encoding: "utf8", mode: 0o600 });
 

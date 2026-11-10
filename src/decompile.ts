@@ -113,6 +113,11 @@ export class DecompileService {
 		return this.jobs.get(id) ?? null;
 	}
 
+	/** Authorized source already present; this never starts native work. */
+	cachedEntries(session: string): CacheEntry[] {
+		return [...this.cache.values()].filter(entry => entry.session === session && this.lookup(entry.key) !== null);
+	}
+
 	private pruneJobs(): void {
 		const now = Date.now();
 		for (const [id, job] of this.jobs) {
@@ -252,7 +257,7 @@ export function pageSource(entry: CacheEntry, startLine: number, maxLines: numbe
 		const text = entry.lines[line - 1] ?? "";
 		if (chars + text.length + 1 > maxChars) {
 			if (out.length === 0) {
-				out.push(text.slice(0, maxChars) + " --[[volt-bridge: line truncated]]");
+				out.push(text.slice(0, maxChars) + " --[[Rift: line truncated]]");
 				longLineTruncated = true;
 				line++;
 			}
