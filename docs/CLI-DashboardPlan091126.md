@@ -1,4 +1,5 @@
 # Shared-service CLI and dashboard implementation plan
+> Superseded (11 Nov 2026): implemented in M3–M10. Rift also has opt-in execute_luau. This is the historical plan; see ../README.md for current usage, not the original NOT STARTED status below.
 
 > **For agentic workers:** Use the registered `executing-plans` skill for native execution, or `subagent-driven-development` only with approved routing. Execute task by task with RED/GREEN evidence. No commits, installs or model calls without their separate approvals.
 

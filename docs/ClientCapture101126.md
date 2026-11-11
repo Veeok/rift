@@ -1,4 +1,5 @@
 # Windows client capture correction — 2026-11-10
+> Superseded (11 Nov 2026): the PENDING model-visibility checks passed in the later build-bound observation; see Milestones101126.md. This original correction record is retained, not relabelled as a new-build live test.
 
 ## Scope and implementation
 

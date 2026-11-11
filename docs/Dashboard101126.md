@@ -31,7 +31,7 @@ Source-level review completed; this is not browser validation:
 
 ## Checks actually performed
 
-From `tools/volt-bridge`:
+From `tools/rift-bridge`:
 
 ```text
 node --check dashboard/app.js

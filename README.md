@@ -1,6 +1,6 @@
 # Rift
 
-A local Windows/OpenCode bridge for inspecting the connected Roblox client. One foreground service is shared by the CLI, MCP adapter and local dashboard. The canonical package is `tools/rift-bridge/`; the CLI and default MCP name are `rift`.
+A local Windows/OpenCode bridge that reads the connected Roblox client and, when execution is enabled, runs explicitly approved Luau in it. One foreground service is shared by the CLI, MCP adapter and local dashboard. The canonical package is `tools/rift-bridge/`; the CLI and default MCP name are `rift`.
 
 ## Windows setup
 
@@ -21,7 +21,9 @@ Start the single owner explicitly and leave its terminal running:
 .\rift.cmd doctor --json
 ```
 
-Open http://127.0.0.1:38918. Unlock with the local token from ignored `.env`; never put it in a URL, screenshot or report. The page clears the input immediately and uses an HttpOnly/SameSite cookie, not persistent browser storage. OpenCode runs `dist/index.js --shared`, not a competing reader listener. Stop a legacy standalone owner before starting `serve`. Inspection commands never start a hidden service.
+Open http://127.0.0.1:38918. Unlock with the local token from ignored `.env`; never put it in a URL, screenshot or report. The page clears the token input immediately; dashboard authentication uses an HttpOnly/SameSite cookie, not localStorage. Theme preferences alone may persist in localStorage. OpenCode runs `dist/index.js --shared`, not a competing reader listener. Stop a legacy standalone owner before starting `serve`. Inspection commands never start a hidden service.
+
+After upgrading Rift, reconnect existing OpenCode MCP connections to refresh their initialization instructions.
 
 Connect your Roblox client by manually running the locally rendered `.secrets/rift-bootstrap.local.luau` reader in Volt. There is no separate editor, playtest fixture, plugin or game-server companion to install.
 
@@ -60,6 +62,8 @@ Reviewed reader pin: `dd4f905d4c026bf7cf45f1f5246ffc92da2d4dbb` (filled by the r
 
 The six bounded legacy tools remain: `get_status`, `list_children`, `search_instances`, `inspect_instance`, `list_scripts`, `read_script`. Modules are never required for inspection; no generic remote-firing/hook/property-write API is added.
 
+The shared service adds `get_sessions`, `select_session` (changes the selected session), `get_logs`, `search_source`, `list_windows`, `preview_capture` and `share_capture` (returns typed MCP image content from a reviewed preview only after `confirm:true`). That is 13 shared tools by default: 11 inspection reads, session selection and image sharing. When execution is enabled, `execute_luau` is the 14th shared tool. The standalone registration retains the six read tools plus opt-in execution.
+
 `execute_luau` is registered when the bridge starts with VOLT_BRIDGE_ALLOW_EXEC=1. Execution also requires a connected reader loaded with execution enabled, otherwise `exec_unavailable`. It requires explicit authorization for the exact source and `confirm:true`; it grants no server authority. There are at most 4 outstanding execute_luau requests; the reader permits at most 16 active request handlers in total across all tools. Neither limit cancels running work nor bounds tasks that executed code spawns. Timeout/disconnect outcomes remain unknown; retained run IDs never execute again. The dashboard has no execution/edit/share action.
 
 Verified private-environment capture advertises `exec_output_v1`; unsupported environments report no capture. Each run streams at most 100 data frames plus one truncation notice, at most 60000 UTF-8 bytes total and 4000 bytes per data frame. Known-token redaction precedes framing. Delayed callbacks share the same budget and stop emitting after socket/reader replacement; executed work itself is not cancelled or replayed. Only synchronous output belongs to the returned output snapshot.
@@ -78,4 +82,12 @@ node test/run-refinement.mjs
 node test/run-loader.mjs
 ```
 
-The last three require the existing local Lune runtime under `.tools/`; it is not downloaded by setup. Model-generation runners are not part of `npm test`; additional headless model-test allowance is zero. Build-bound automated/live counts, pending client checks and retained failed attempts belong in `RiftMilestones101126.md` / `.json`.
+The last three require the existing local Lune runtime under `.tools/`; it is not downloaded by setup. Model-generation runners are not part of `npm test`; additional headless model-test allowance is zero. Build-bound automated/live counts, pending client checks and retained failed attempts belong in `reports/RiftMilestones101126.json`.
+
+## Documentation
+
+- **Current usage and authority:** this README and `AGENT_INSTRUCTIONS.md`. Rift supports inspection and opt-in approved execution; the browser dashboard remains read-only.
+- **Capability and migration references:** `docs/Capabilities101126.md`, `docs/Migration101126.md`; `docs/Dashboard101126.md` describes the dashboard implementation.
+- **Build-bound M3–M10 evidence, not a promise about a later runtime:** the local milestone report above, `docs/Milestones101126.md`, `docs/BrowserChecks101126.md`, `docs/ClientCapture101126.md`. Follow their dated observations and superseded notes; do not renew old test counts or screenshots by changing a build number.
+- **History:** the 09 Nov CLI/dashboard plan and design, `docs/DashboardGuidelines101126.md`, the 08 Nov handoff, and other dated validation/refinement/publication reports. Superseded notes identify obsolete status or capability wording without rewriting the evidence.
+- **Private coordination:** ignored `.unlazy/` ledgers and `test/results/` are recovery/evidence records, not competing usage guides. Generated `test/.tmp/` fixtures are disposable test scratch, not milestone deliverables.

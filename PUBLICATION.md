@@ -4,4 +4,6 @@ Explicit local Rift source export only: no parent repository/history, credential
 
 Reader template build: d018160c2392. Historical report statuses are preserved; current M3–M10 results have their own build and live/blocked denominators. Local export generation does not establish a new live compatibility pass.
 
+Dated report pins, reader builds and results may differ from the current reader. Reports supplied with --history-dir are copied byte-for-byte and remain immutable historical observations, NOT evidence of current compatibility.
+
 Private Windows paths in inherited test configurations are redacted placeholders. Runtime resolves .env from the package root. Legacy reader protocol/environment names remain intentional compatibility aliases.

@@ -4,7 +4,7 @@ import {startService,EXIT_CODES} from './service.js';
 import {ServiceClient,apiPort} from './service-client.js';
 import {makeRedactor} from './redact.js';
 
-const help=`Rift — local Roblox client inspection\n\nUsage: rift status [--json]\n       rift doctor [--json]\n       rift serve\n       rift setup [--apply] [--config <OpenCode JSON/JSONC path>]\n       rift migrate [--apply | --rollback] [--config <path>]\n\nNo command starts a background service. Start serve explicitly, then use OpenCode and the local dashboard together.\nExit codes: 0 healthy; 2 bridge offline; 3 no client; 4 build mismatch; 5 stale; 6 configuration/authentication/selection; 64 usage; 70 unexpected failure.\n`;
+const help=`Rift - local Roblox client inspection and opt-in approved execution\n\nUsage: rift status [--json]\n       rift doctor [--json]\n       rift serve\n       rift setup [--apply] [--config <OpenCode JSON/JSONC path>]\n       rift migrate [--apply | --rollback] [--config <path>]\n\nNo command starts a background service. Start serve explicitly, then use OpenCode and the local dashboard together.\nExit codes: 0 healthy; 2 bridge offline; 3 no client; 4 build mismatch; 5 stale; 6 configuration/authentication/selection; 64 usage; 70 unexpected failure.\n`;
 function human(s:any,doctor:boolean):string{
 	const lines=[`Rift · ${s.state}`,`Session  ${s.session?.name??'—'} · ${s.session?.clientName??'no client'} (${s.session?.id??'none'})`,
 		`Build    ${s.build?.serviceBuild??'not running'} · reader ${s.build?.reportedReaderBuild??'—'}`,`Updated  ${s.freshness?.lastUpdate??'never'}${s.freshness?.ageMs===null?'':` (${s.freshness?.ageMs??0} ms ago)`}`,

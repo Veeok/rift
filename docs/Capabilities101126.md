@@ -1,6 +1,6 @@
 # Rift capability matrix — Windows/OpenCode scope
 
-Owner correction applies to the entire deliverable: no separate editor, playtest demo, plugin or server companion is required. This matrix distinguishes implementation, measured automation and pending actual-client observations. See the final build-bound `RiftMilestones101126.json` for counts; do not infer final results from code alone.
+Owner correction applies to the entire deliverable: no separate editor, playtest demo, plugin or server companion is required. This matrix distinguishes implementation, measured automation and pending actual-client observations. See the final build-bound `../reports/RiftMilestones101126.json` for counts; do not infer final results from code alone.
 
 | Capability | Implementation / normal entry point | Measured boundary | Pending / excluded |
 |---|---|---|---|

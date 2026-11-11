@@ -1,4 +1,5 @@
 # Dashboard Web Interface Guidelines review — 101126
+> Superseded (11 Nov 2026): its BrowserFresh pass was later invalidated; the accepted browser record is BrowserChecks101126.md. The differing retained-event totals describe separate attempts, not one renewed pass.
 
 Scope: `dashboard/index.html`, `dashboard/app.js`, `dashboard/style.css`.
 Applied: Vercel Web Interface Guidelines (fetched from source) + Karpathy surgical/minimal rules.

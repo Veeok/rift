@@ -2,7 +2,7 @@
   "name": "rift-bridge",
   "version": "0.3.0",
   "private": true,
-  "description": "Rift: local Roblox client inspection, diagnostics, activity and explicit visual review for OpenCode.",
+  "description": "Rift: local Roblox client inspection, diagnostics, activity, explicit visual review and opt-in approved client execution for OpenCode.",
   "type": "module",
   "main": "dist/index.js",
   "bin": { "rift": "dist/cli.js" },

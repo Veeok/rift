@@ -1,4 +1,5 @@
 # CLI + dashboard design (091126)
+> Superseded (11 Nov 2026): implemented in M3–M10. Rift also has opt-in execute_luau. This is the historical design; see ../README.md for current usage, not the original planning-only status below.
 
 Status: owner approved on 09 Nov 2026. Planning only; implementation explicitly deferred by the owner.
 

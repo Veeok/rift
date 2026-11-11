@@ -3,52 +3,289 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#11151f">
-  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0b0812">
+  <meta name="color-scheme" content="dark">
   <title>Rift · Local inspection</title>
-  <link rel="stylesheet" href="/style.css">
-  <script src="/app.js" defer></script>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+  <script src="health-state.js" defer></script>
 </head>
 <body>
+  <svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0">
+    <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+    <symbol id="i-newest" viewBox="0 0 24 24"><path d="M5 3h14"/><path d="m18 13-6-6-6 6"/><path d="M12 7v14"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol>
+    <symbol id="i-triangle" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
+    <symbol id="i-window" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 3 20 12 6 21Z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-unlock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><path d="m7 6 5 5 5-5"/><path d="m7 13 5 5 5-5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54Z"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+    <symbol id="i-tag" viewBox="0 0 24 24"><path d="M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0 0-2 2v7.17a2 2 0 0 0 .59 1.42l8.7 8.7a2.43 2.43 0 0 0 3.42 0l6.58-6.58a2.43 2.43 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1"/></symbol>
+    <symbol id="i-crop" viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98"/><path d="m15.41 6.51-6.82 3.98"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.09-3.09a2 2 0 0 0-2.82 0L6 21"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
+    <symbol id="i-pointer" viewBox="0 0 24 24"><path d="m9 9 5 12 1.8-5.2L21 14Z"/><path d="M7.2 2.2 8 5.1"/><path d="m5.1 8-2.9-.8"/><path d="M14 4.1 12 6"/><path d="m6 12-1.9 2"/></symbol>
+    <symbol id="i-type" viewBox="0 0 24 24"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-hash" viewBox="0 0 24 24"><path d="M4 9h16"/><path d="M4 15h16"/><path d="M10 3 8 21"/><path d="m16 3-2 18"/></symbol>
+  </svg>
+  <svg class="sea-waves" aria-hidden="true" focusable="false" viewBox="0 0 1440 200" preserveAspectRatio="none">
+    <path class="sea-wave sea-wave-1" d="M0,200 L0,88.6 L20,89.4 L40,90.1 L60,90.7 L80,91.2 L100,91.6 L120,91.8 L140,92.0 L160,92.0 L180,91.9 L200,91.7 L220,91.4 L240,90.9 L260,90.4 L280,89.7 L300,88.9 L320,88.1 L340,87.2 L360,86.2 L380,85.1 L400,84.0 L420,82.9 L440,81.7 L460,80.5 L480,79.3 L500,78.1 L520,76.9 L540,75.8 L560,74.7 L580,73.6 L600,72.7 L620,71.7 L640,70.9 L660,70.2 L680,69.5 L700,69.0 L720,68.6 L740,68.3 L760,68.1 L780,68.0 L800,68.0 L820,68.2 L840,68.5 L860,68.9 L880,69.4 L900,70.0 L920,70.7 L940,71.5 L960,72.4 L980,73.4 L1000,74.4 L1020,75.5 L1040,76.6 L1060,77.8 L1080,79.0 L1100,80.2 L1120,81.4 L1140,82.6 L1160,83.7 L1180,84.9 L1200,85.9 L1220,86.9 L1240,87.9 L1260,88.7 L1280,89.5 L1300,90.2 L1320,90.8 L1340,91.3 L1360,91.6 L1380,91.9 L1400,92.0 L1420,92.0 L1440,91.9 L1440,200 Z"/>
+    <path class="sea-wave sea-wave-2" d="M0,200 L0,128.4 L20,127.6 L40,126.7 L60,125.8 L80,124.8 L100,123.7 L120,122.6 L140,121.5 L160,120.4 L180,119.2 L200,118.0 L220,116.8 L240,115.7 L260,114.5 L280,113.4 L300,112.3 L320,111.3 L340,110.3 L360,109.3 L380,108.4 L400,107.6 L420,106.8 L440,106.2 L460,105.6 L480,105.1 L500,104.7 L520,104.4 L540,104.1 L560,104.0 L580,104.0 L600,104.1 L620,104.3 L640,104.5 L660,104.9 L680,105.4 L700,105.9 L720,106.5 L740,107.3 L760,108.0 L780,108.9 L800,109.8 L820,110.8 L840,111.8 L860,112.9 L880,114.0 L900,115.2 L920,116.3 L940,117.5 L960,118.7 L980,119.9 L1000,121.0 L1020,122.1 L1040,123.3 L1060,124.3 L1080,125.4 L1100,126.3 L1120,127.2 L1140,128.1 L1160,128.9 L1180,129.6 L1200,130.2 L1220,130.7 L1240,131.2 L1260,131.5 L1280,131.8 L1300,131.9 L1320,132.0 L1340,132.0 L1360,131.8 L1380,131.6 L1400,131.3 L1420,130.8 L1440,130.3 L1440,200 Z"/>
+    <path class="sea-wave sea-wave-3" d="M0,200 L0,147.8 L20,147.2 L40,146.7 L60,146.4 L80,146.1 L100,146.0 L120,146.0 L140,146.1 L160,146.4 L180,146.8 L200,147.3 L220,147.9 L240,148.6 L260,149.4 L280,150.2 L300,151.2 L320,152.2 L340,153.2 L360,154.3 L380,155.4 L400,156.6 L420,157.7 L440,158.8 L460,159.8 L480,160.8 L500,161.8 L520,162.7 L540,163.5 L560,164.2 L580,164.7 L600,165.2 L620,165.6 L640,165.9 L660,166.0 L680,166.0 L700,165.9 L720,165.6 L740,165.2 L760,164.8 L780,164.2 L800,163.5 L820,162.7 L840,161.8 L860,160.9 L880,159.9 L900,158.8 L920,157.7 L940,156.6 L960,155.5 L980,154.4 L1000,153.3 L1020,152.2 L1040,151.2 L1060,150.3 L1080,149.4 L1100,148.6 L1120,147.9 L1140,147.3 L1160,146.8 L1180,146.4 L1200,146.2 L1220,146.0 L1240,146.0 L1260,146.1 L1280,146.4 L1300,146.7 L1320,147.2 L1340,147.8 L1360,148.5 L1380,149.3 L1400,150.1 L1420,151.1 L1440,152.1 L1440,200 Z"/>
+  </svg>
   <a class="skip" href="#main">Skip to inspection</a>
-  <header class="masthead"><div><span class="brand">RIFT</span><span class="eyebrow">LOCAL / INSPECTION</span></div><span class="local-label">Read-only workspace · no execution</span></header>
-  <section id="unlock" class="panel" aria-labelledby="unlock-title" hidden>
-    <h1 id="unlock-title">Unlock local inspection</h1>
-    <p>Use your local Rift token. It is sent only to this origin and is never saved by this page.</p>
-    <form id="login-form"><label for="token">Local token</label><input id="token" name="token" type="password" required autocomplete="off" spellcheck="false"><button type="submit">Unlock</button></form>
-    <p id="login-message" role="status"></p>
+
+  <header class="commandbar">
+    <div class="commandbar-inner">
+      <div class="masthead">
+        <span class="brand" translate="no">RIFT</span>
+      </div>
+      <nav aria-label="Inspection views" class="nav">
+        <a href="#activity" data-view="activity"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-activity"/></svg>Activity</a>
+        <a href="#source" data-view="source"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-code"/></svg>Source &amp; Widgets</a>
+        <a href="#visuals" data-view="visuals"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-eye"/></svg>Visuals</a>
+        <a href="#diagnostics" data-view="diagnostics"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-gauge"/></svg>Diagnostics</a>
+      </nav>
+      <label class="theme-switch"><input id="theme-toggle" name="theme" type="checkbox" role="switch" autocomplete="off"><span class="theme-track" aria-hidden="true"><svg class="od-icon theme-moon" aria-hidden="true" focusable="false"><use href="#i-moon"/></svg><svg class="od-icon theme-sun" aria-hidden="true" focusable="false"><use href="#i-sun"/></svg></span><span class="sr-only">Light mode</span></label>
+    </div>
+  </header>
+
+  <section id="unlock" class="airlock" aria-labelledby="unlock-title" hidden>
+    <svg class="rift-scene" aria-hidden="true" focusable="false" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice">
+      <g class="bridge">
+        <path class="bridge-arc" d="M120,690 Q720,470 1320,690"/>
+        <line class="bridge-deck" x1="80" y1="700" x2="1360" y2="700"/>
+        <line class="hanger" x1="195.0" y1="664.2" x2="195.0" y2="700"/><line class="hanger" x1="270.0" y1="641.9" x2="270.0" y2="700"/><line class="hanger" x1="345.0" y1="623.0" x2="345.0" y2="700"/><line class="hanger" x1="420.0" y1="607.5" x2="420.0" y2="700"/><line class="hanger" x1="495.0" y1="595.5" x2="495.0" y2="700"/><line class="hanger" x1="570.0" y1="586.9" x2="570.0" y2="700"/><line class="hanger" x1="645.0" y1="581.7" x2="645.0" y2="700"/><line class="hanger" x1="720.0" y1="580.0" x2="720.0" y2="700"/><line class="hanger" x1="795.0" y1="581.7" x2="795.0" y2="700"/><line class="hanger" x1="870.0" y1="586.9" x2="870.0" y2="700"/><line class="hanger" x1="945.0" y1="595.5" x2="945.0" y2="700"/><line class="hanger" x1="1020.0" y1="607.5" x2="1020.0" y2="700"/><line class="hanger" x1="1095.0" y1="623.0" x2="1095.0" y2="700"/><line class="hanger" x1="1170.0" y1="641.9" x2="1170.0" y2="700"/><line class="hanger" x1="1245.0" y1="664.2" x2="1245.0" y2="700"/>
+      </g>
+      <circle class="node node-a" cx="120" cy="700" r="6"/>
+      <circle class="node node-b" cx="1320" cy="700" r="6"/>
+      <path class="wave wave-1" d="M0,900 L0,738.9 L20,740.0 L40,741.0 L60,741.9 L80,742.7 L100,743.4 L120,744.0 L140,744.5 L160,744.8 L180,745.0 L200,745.0 L220,744.9 L240,744.6 L260,744.3 L280,743.7 L300,743.1 L320,742.3 L340,741.5 L360,740.5 L380,739.5 L400,738.3 L420,737.2 L440,736.0 L460,734.8 L480,733.6 L500,732.4 L520,731.3 L540,730.2 L560,729.2 L580,728.3 L600,727.4 L620,726.7 L640,726.1 L660,725.6 L680,725.3 L700,725.1 L720,725.0 L740,725.1 L760,725.3 L780,725.7 L800,726.2 L820,726.8 L840,727.5 L860,728.4 L880,729.3 L900,730.4 L920,731.4 L940,732.6 L960,733.8 L980,735.0 L1000,736.2 L1020,737.3 L1040,738.5 L1060,739.6 L1080,740.6 L1100,741.6 L1120,742.4 L1140,743.2 L1160,743.8 L1180,744.3 L1200,744.7 L1220,744.9 L1240,745.0 L1260,744.9 L1280,744.7 L1300,744.4 L1320,743.9 L1340,743.3 L1360,742.6 L1380,741.8 L1400,740.8 L1420,739.8 L1440,738.8 L1440,900 Z"/>
+      <path class="wave wave-2" d="M0,900 L0,783.2 L20,782.8 L40,782.2 L60,781.6 L80,780.8 L100,780.0 L120,779.0 L140,778.0 L160,777.0 L180,775.9 L200,774.7 L220,773.5 L240,772.3 L260,771.0 L280,769.7 L300,768.5 L320,767.2 L340,766.0 L360,764.8 L380,763.7 L400,762.6 L420,761.5 L440,760.6 L460,759.7 L480,758.9 L500,758.2 L520,757.5 L540,757.0 L560,756.6 L580,756.3 L600,756.1 L620,756.0 L640,756.0 L660,756.2 L680,756.4 L700,756.8 L720,757.3 L740,757.8 L760,758.5 L780,759.3 L800,760.1 L820,761.1 L840,762.1 L860,763.1 L880,764.3 L900,765.4 L920,766.6 L940,767.9 L960,769.1 L980,770.4 L1000,771.6 L1020,772.9 L1040,774.1 L1060,775.3 L1080,776.4 L1100,777.5 L1120,778.5 L1140,779.5 L1160,780.4 L1180,781.2 L1200,781.9 L1220,782.5 L1240,783.0 L1260,783.4 L1280,783.7 L1300,783.9 L1320,784.0 L1340,784.0 L1360,783.8 L1380,783.5 L1400,783.2 L1420,782.7 L1440,782.1 L1440,900 Z"/>
+      <path class="wave wave-3" d="M0,900 L0,812.7 L20,811.4 L40,810.2 L60,809.0 L80,807.8 L100,806.7 L120,805.6 L140,804.5 L160,803.4 L180,802.4 L200,801.5 L220,800.6 L240,799.8 L260,799.0 L280,798.3 L300,797.8 L320,797.2 L340,796.8 L360,796.5 L380,796.2 L400,796.1 L420,796.0 L440,796.0 L460,796.1 L480,796.4 L500,796.7 L520,797.0 L540,797.5 L560,798.1 L580,798.7 L600,799.4 L620,800.2 L640,801.1 L660,802.0 L680,803.0 L700,804.0 L720,805.1 L740,806.2 L760,807.3 L780,808.5 L800,809.7 L820,810.9 L840,812.1 L860,813.4 L880,814.6 L900,815.8 L920,816.9 L940,818.1 L960,819.2 L980,820.2 L1000,821.3 L1020,822.2 L1040,823.1 L1060,824.0 L1080,824.7 L1100,825.4 L1120,826.1 L1140,826.6 L1160,827.1 L1180,827.4 L1200,827.7 L1220,827.9 L1240,828.0 L1260,828.0 L1280,827.9 L1300,827.7 L1320,827.5 L1340,827.1 L1360,826.6 L1380,826.1 L1400,825.5 L1420,824.8 L1440,824.0 L1440,900 Z"/>
+      <path class="wave wave-4" d="M0,900 L0,844.1 L20,844.0 L40,844.1 L60,844.2 L80,844.5 L100,845.0 L120,845.5 L140,846.2 L160,847.0 L180,847.8 L200,848.8 L220,849.8 L240,850.9 L260,852.1 L280,853.3 L300,854.5 L320,855.8 L340,857.0 L360,858.3 L380,859.5 L400,860.6 L420,861.8 L440,862.8 L460,863.8 L480,864.7 L500,865.5 L520,866.2 L540,866.8 L560,867.3 L580,867.7 L600,867.9 L620,868.0 L640,868.0 L660,867.8 L680,867.5 L700,867.1 L720,866.6 L740,865.9 L760,865.2 L780,864.3 L800,863.4 L820,862.4 L840,861.3 L860,860.1 L880,859.0 L900,857.7 L920,856.5 L940,855.2 L960,854.0 L980,852.8 L1000,851.6 L1020,850.5 L1040,849.4 L1060,848.4 L1080,847.5 L1100,846.6 L1120,845.9 L1140,845.3 L1160,844.8 L1180,844.4 L1200,844.1 L1220,844.0 L1240,844.0 L1260,844.1 L1280,844.4 L1300,844.8 L1320,845.3 L1340,845.9 L1360,846.6 L1380,847.5 L1400,848.4 L1420,849.4 L1440,850.5 L1440,900 Z"/>
+    </svg>
+    <div class="airlock-card panel">
+      <p class="airlock-mark" translate="no" aria-hidden="true">RIFT</p>
+      <h1 id="unlock-title">Unlock local inspection</h1>
+      <form id="login-form">
+        <label for="token">Local token</label>
+        <div class="token-row">
+          <span class="input-icon"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-key"/></svg><input id="token" name="token" type="password" required autocomplete="off" spellcheck="false"></span>
+          <button type="submit"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-unlock"/></svg>Unlock</button>
+        </div>
+      </form>
+      <p class="airlock-hint">Use your local Rift token. It is sent only to this origin and is never saved by this page.</p>
+      <p id="login-message" role="status"></p>
+    </div>
   </section>
+
   <main id="main" tabindex="-1">
     <section class="overview panel" aria-labelledby="overview-title">
-      <div class="section-head"><div><p class="eyebrow">INSPECTION TARGET</p><h1 id="overview-title">No current client</h1></div><span id="health" class="badge">Connecting</span></div>
-      <p id="connection-note" role="status">Checking the local service…</p>
-      <dl id="identity" class="facts"></dl>
-      <details><summary>Reported capabilities · not independently verified</summary><pre id="capabilities">No current client</pre></details>
-      <div class="toolbar"><label for="session">Inspection session</label><select id="session"><option value="">Choose a session…</option></select><button id="refresh" type="button">Refresh / retry</button><span id="busy" role="status"></span></div>
+      <div class="overview-row">
+        <div class="overview-id">
+          <h1 id="overview-title">No current client</h1>
+        </div>
+        <div class="toolbar">
+          <label for="session">Inspection session</label>
+          <span id="health" class="badge">Connecting</span>
+          <span class="select"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-layers"/></svg><select id="session"><option value="">Choose a session.</option></select></span>
+          <button id="refresh" type="button"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-refresh"/></svg>Refresh / Retry</button>
+          <span id="busy" role="status"></span>
+        </div>
+      </div>
+      <p id="connection-note" role="status">Checking the local service.</p>
+      <details class="disclosure">
+        <summary><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-info"/></svg>Session details</summary>
+        <dl id="identity" class="facts"></dl>
+        <label class="adv-toggle"><input name="session-advanced" type="checkbox" autocomplete="off"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-more"/></svg>Advanced details</label>
+        <details class="disclosure">
+          <summary><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-terminal"/></svg>Reported capabilities · not independently verified</summary>
+          <pre id="capabilities" translate="no">No current client</pre>
+        </details>
+      </details>
     </section>
-    <nav aria-label="Inspection views" class="nav"><a href="#activity" data-view="activity">Activity</a><a href="#source" data-view="source">Source &amp; Widgets</a><a href="#visuals" data-view="visuals">Visuals</a><a href="#diagnostics" data-view="diagnostics">Diagnostics</a></nav>
+
     <p id="global-error" class="warning" role="alert" hidden></p>
+
     <section id="activity" class="view" aria-labelledby="activity-title">
-      <div class="section-head"><div><p class="eyebrow">SESSION EVIDENCE</p><h2 id="activity-title">Activity</h2></div><p id="counts">No current activity</p></div>
-      <div class="toolbar"><label for="severity">Show</label><select id="severity"><option value="all">All events</option><option value="error">Errors only</option></select><button id="newest" type="button">Newest event</button><button id="latest-error" type="button">Latest Error</button></div>
-      <p>Newest first · up to 1,000 retained events in this page. Newest and Latest Error navigate loaded evidence, not events that have already expired.</p>
+      <div class="section-head">
+        <div>
+          <h2 id="activity-title">Activity</h2>
+        </div>
+        <div class="counts-wrap"><p id="counts">No current activity</p></div>
+      </div>
       <p id="log-notice" class="warning" role="status"></p>
-      <div class="split"><section class="panel" aria-label="Recent events"><p id="log-empty">Waiting for a current session.</p><ol id="events" class="events" aria-label="Events, most recent first"></ol></section><section class="panel detail" aria-labelledby="event-title"><h3 id="event-title">Event detail</h3><p id="event-placeholder">Select an event to inspect its full evidence.</p><dl id="event-facts" class="facts"></dl><pre id="event-message"></pre><pre id="event-details"></pre></section></div>
+      <div class="split console">
+        <section class="panel stream" aria-label="Recent events">
+          <div class="pane-head">
+            <div class="toolbar">
+              <label for="severity">Show</label>
+              <span class="select select-sm"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-filter"/></svg><select id="severity"><option value="all">All events</option><option value="error">Errors only</option></select></span>
+              <button id="newest" type="button"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-newest"/></svg>Newest Event</button>
+              <button id="latest-error" type="button"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-alert"/></svg>Latest Error</button>
+            </div>
+          </div>
+          <div class="empty-state"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-inbox"/></svg><p id="log-empty" class="empty">Waiting for a current session.</p></div>
+          <ol id="events" class="events" aria-label="Events, most recent first"></ol>
+        </section>
+        <section class="panel detail" aria-labelledby="event-title">
+          <h3 id="event-title">Event detail</h3>
+          <div class="empty-state empty-framed"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-pointer"/></svg><p id="event-placeholder" class="empty">Select an event to inspect its full evidence.</p></div>
+          <pre id="event-message" class="slab" translate="no"></pre>
+          <pre id="event-details" class="slab" translate="no"></pre>
+          <details class="disclosure meta">
+            <summary><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-tag"/></svg>Event metadata</summary>
+            <dl id="event-facts" class="facts"></dl>
+            <label class="adv-toggle"><input name="event-advanced" type="checkbox" autocomplete="off"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-more"/></svg>Advanced details</label>
+          </details>
+        </section>
+      </div>
     </section>
+
     <section id="source" class="view" aria-labelledby="source-title" hidden>
-      <p class="eyebrow">READ-ONLY EVIDENCE</p><h2 id="source-title">Source &amp; Widgets</h2>
-      <p>Connection heartbeat does not establish source or widget freshness. Labels and timestamps below are reported evidence, not a live-state guarantee.</p>
-      <div class="split"><section class="panel"><h3>Literal source search</h3><form id="source-form"><label for="query">Literal text</label><input id="query" name="query" required maxlength="2000" autocomplete="off"><label for="path-filter">Path filter (optional)</label><input id="path-filter" name="path-filter" autocomplete="off"><label class="check"><input id="case-sensitive" name="case-sensitive" type="checkbox" autocomplete="off">Case sensitive</label><button type="submit" data-current>Search source</button></form><p id="source-notice" role="status"></p><ul id="source-results" class="results"></ul><button id="source-more" type="button" hidden>Load more matches</button><h4>Selected source</h4><pre id="source-detail">No source selected.</pre></section>
-      <section class="panel"><h3>Widget / instance search</h3><form id="widget-form"><label for="widget-name">Instance name</label><input id="widget-name" name="widget-name" required autocomplete="off"><button type="submit" data-current>Find instances</button></form><p id="widget-notice" role="status"></p><ul id="widget-results" class="results"></ul><h4>Properties, attributes &amp; tags</h4><pre id="widget-detail">No instance selected.</pre></section></div>
+      <div class="section-head">
+        <div>
+          <h2 id="source-title">Source &amp; Widgets</h2>
+          <p class="caveat">Connection heartbeat does not establish source or widget freshness.</p>
+        </div>
+        <fieldset class="switch">
+          <legend class="sr-only">Search type</legend>
+          <label><input type="radio" name="search-mode" value="source" autocomplete="off" checked><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-code"/></svg>Source</label>
+          <label><input type="radio" name="search-mode" value="widgets" autocomplete="off"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-box"/></svg>Widgets</label>
+        </fieldset>
+      </div>
+      <section class="panel search-pane pane-source">
+        <h3>Literal source search</h3>
+        <form id="source-form">
+          <div class="form-fields">
+            <div class="field field-wide">
+              <label for="query">Literal text</label>
+              <span class="input-icon"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg><input id="query" name="query" required maxlength="2000" autocomplete="off" spellcheck="false" placeholder="e.g. RemoteEvent…"></span>
+            </div>
+            <div class="field">
+              <label for="path-filter">Path filter (optional)</label>
+              <span class="input-icon"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-folder"/></svg><input id="path-filter" name="path-filter" autocomplete="off" spellcheck="false" placeholder="e.g. ServerScriptService/…"></span>
+            </div>
+          </div>
+          <div class="form-actions">
+            <label class="check"><input id="case-sensitive" name="case-sensitive" type="checkbox" autocomplete="off">Case sensitive</label>
+            <button type="submit" data-current><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg>Search Source</button>
+          </div>
+        </form>
+        <p id="source-notice" role="status"></p>
+        <div class="result-grid">
+          <div class="result-list">
+            <ul id="source-results" class="results"></ul>
+            <button id="source-more" type="button" hidden><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-more"/></svg>Load More Matches</button>
+          </div>
+          <div class="result-detail">
+            <h4>Selected source</h4>
+            <pre id="source-detail" class="slab" translate="no">No source selected.</pre>
+          </div>
+        </div>
+      </section>
+      <section class="panel search-pane pane-widgets">
+        <h3>Widget / instance search</h3>
+        <form id="widget-form">
+          <div class="form-fields">
+            <div class="field field-wide">
+              <label for="widget-name">Instance name</label>
+              <span class="input-icon"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg><input id="widget-name" name="widget-name" required autocomplete="off" spellcheck="false" placeholder="e.g. MainMenu…"></span>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" data-current><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-box"/></svg>Find Instances</button>
+          </div>
+        </form>
+        <p id="widget-notice" role="status"></p>
+        <div class="result-grid">
+          <div class="result-list">
+            <ul id="widget-results" class="results"></ul>
+          </div>
+          <div class="result-detail">
+            <h4>Properties, attributes &amp; tags</h4>
+            <pre id="widget-detail" class="slab" translate="no">No instance selected.</pre>
+          </div>
+        </div>
+      </section>
     </section>
+
     <section id="visuals" class="view" aria-labelledby="visuals-title" hidden>
-      <p class="eyebrow">EXPLICIT LOCAL REVIEW</p><h2 id="visuals-title">Visuals</h2>
-      <p class="warning">Session match unverified; historical local preview. A window capture is not proof of the selected session’s state.</p>
-      <div class="split"><section class="panel"><h3>Choose a window</h3><button id="windows-refresh" type="button">Refresh candidate windows</button><p id="windows-notice" role="status">Refresh to list available windows. No window is selected automatically.</p><form id="capture-form"><label for="window">Capture target</label><select id="window" required><option value="">Choose a window…</option></select><fieldset><legend>Optional crop · window-relative integer pixels</legend><p>Leave all four fields empty for the whole window.</p><div class="crop"><label>X<input id="crop-x" name="crop-x" type="number" min="0" step="1" autocomplete="off"></label><label>Y<input id="crop-y" name="crop-y" type="number" min="0" step="1" autocomplete="off"></label><label>Width<input id="crop-width" name="crop-width" type="number" min="1" step="1" autocomplete="off"></label><label>Height<input id="crop-height" name="crop-height" type="number" min="1" step="1" autocomplete="off"></label></div></fieldset><button type="submit" data-current>Capture local preview</button></form><p id="capture-notice" role="status">Not captured. Nothing is shared.</p></section>
-      <section class="panel"><h3>Historical local preview</h3><img id="capture-image" alt="Local window capture for manual review; session match is unverified" hidden><pre id="capture-meta"></pre><button id="review-capture" type="button" hidden>I reviewed this local preview</button><div id="share-panel" hidden><p class="warning">Not shared yet. Sharing is MCP-only and requires your explicit confirmation. Review the window content for private information first.</p><label for="share-request">Copyable MCP request (select and copy)</label><textarea id="share-request" readonly rows="5" spellcheck="false"></textarea></div></section></div>
+      <div class="section-head">
+        <div>
+          <h2 id="visuals-title">Visuals</h2>
+        </div>
+      </div>
+      <p class="warning">Session match unverified; historical local preview. A window capture is not proof of the selected session's state.</p>
+      <div class="split">
+        <section class="panel">
+          <h3>Choose a window</h3>
+          <button id="windows-refresh" type="button"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-refresh"/></svg>Refresh Candidate Windows</button>
+          <p id="windows-notice" role="status">Refresh to list available windows. No window is selected automatically.</p>
+          <form id="capture-form">
+            <label for="window">Capture target</label>
+            <span class="select"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-window"/></svg><select id="window" required><option value="">Choose a window.</option></select></span>
+            <details class="disclosure crop-toggle">
+              <summary><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-crop"/></svg>Optional crop</summary>
+              <fieldset>
+                <legend>Optional crop · window-relative integer pixels</legend>
+                <p>Leave all four fields empty for the whole window.</p>
+                <div class="crop">
+                  <label>X<input id="crop-x" name="crop-x" type="number" min="0" step="1" autocomplete="off"></label>
+                  <label>Y<input id="crop-y" name="crop-y" type="number" min="0" step="1" autocomplete="off"></label>
+                  <label>Width<input id="crop-width" name="crop-width" type="number" min="1" step="1" autocomplete="off"></label>
+                  <label>Height<input id="crop-height" name="crop-height" type="number" min="1" step="1" autocomplete="off"></label>
+                </div>
+              </fieldset>
+            </details>
+            <button type="submit" data-current><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-camera"/></svg>Capture Local Preview</button>
+          </form>
+          <p id="capture-notice" role="status">Not captured. Nothing is shared.</p>
+        </section>
+        <section class="panel viewfinder">
+          <h3>Historical local preview</h3>
+          <div class="empty-state empty-framed viewfinder-empty"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-image"/></svg><p class="empty">No local preview captured yet.</p></div>
+          <img id="capture-image" alt="Local window capture for manual review; session match is unverified" hidden>
+          <pre id="capture-meta" translate="no"></pre>
+          <button id="review-capture" type="button" hidden><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-check"/></svg>I Reviewed This Local Preview</button>
+          <div id="share-panel" hidden>
+            <p class="warning">Not shared yet. Sharing is MCP-only and requires your explicit confirmation. Review the window content for private information first.</p>
+            <label for="share-request"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-share"/></svg>Copyable MCP request (select and copy)</label>
+            <textarea id="share-request" readonly rows="5" spellcheck="false"></textarea>
+          </div>
+        </section>
+      </div>
     </section>
-    <section id="diagnostics" class="view panel" aria-labelledby="diagnostics-title" hidden><p class="eyebrow">LOCAL SERVICE</p><h2 id="diagnostics-title">Diagnostics</h2><button id="doctor" type="button">Run read-only diagnostics</button><p id="doctor-notice" role="status">Diagnostics have not been requested.</p><pre id="doctor-result"></pre></section>
+
+    <section id="diagnostics" class="view panel" aria-labelledby="diagnostics-title" hidden>
+      <h2 id="diagnostics-title">Diagnostics</h2>
+      <button id="doctor" type="button"><svg class="od-icon" aria-hidden="true" focusable="false"><use href="#i-play"/></svg>Run Read-Only Diagnostics</button>
+      <p id="doctor-notice" role="status">Diagnostics have not been requested.</p>
+      <pre id="doctor-result" class="slab" translate="no"></pre>
+    </section>
   </main>
-  <footer>Rift / local evidence, explicit boundaries. No edits, execution or browser sharing controls.</footer>
+
 </body>
 </html>

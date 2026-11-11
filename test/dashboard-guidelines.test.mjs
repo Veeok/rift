@@ -32,7 +32,10 @@ function inputs() {
 }
 
 test('theme-color meta matches page background', () => {
-  assert.equal(meta('theme-color'), '#11151f', 'theme-color should match :root background');
+  const root = css.match(/:root\s*\{([\s\S]*?)\}/)?.[1] ?? '';
+  const background = root.match(/--(?:tier-0|bg):\s*(#[\da-f]{6})\s*;/i)?.[1];
+  assert.ok(background, 'root declares the page background');
+  assert.equal(meta('theme-color'), background, 'theme-color should match :root background');
 });
 
 test('all inputs have meaningful name and autocomplete', () => {
