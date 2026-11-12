@@ -6,6 +6,7 @@
 import { setTimeout as sleep } from "node:timers/promises";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { readScriptResult } from "./read-script-result.js";
 import { z } from "zod";
 import { Bridge, BridgeError } from "./bridge.js";
 import { DecompileService, cacheKey, pageSource, type CacheEntry, type DecompileOptions, type Job, type ScriptInfo } from "./decompile.js";
@@ -55,7 +56,8 @@ function errorResult(err: unknown, extra: Payload = {}): CallToolResult {
 		log.error("tool failure", err);
 		error = { code: "internal", message: err instanceof Error ? err.message : String(err), retryable: false };
 	}
-	return { isError: true, content: [{ type: "text", text: text({ ok: false, ...extra, error }) }] };
+	const payload = { ok: false, ...extra, error };
+	return extra.tool === "read_script" ? readScriptResult(payload, undefined, true) : { isError: true, content: [{ type: "text", text: text(payload) }] };
 }
 
 export function registerTools(server: McpServer, bridge: Bridge, decompiler: DecompileService, exec: ExecService): void {
@@ -90,7 +92,7 @@ export function registerTools(server: McpServer, bridge: Bridge, decompiler: Dec
 				new BridgeError("too_large", `response exceeds ${LIMITS.maxToolResponseChars} chars; request fewer items, properties or a shorter maxStringLength`),
 			);
 		}
-		return { content: [{ type: "text", text: out }] };
+		return payload.tool === "read_script" ? readScriptResult(payload) : { content: [{ type: "text", text: out }] };
 	};
 
 	const assertRef = (ref: RefT | undefined): void => {
@@ -367,12 +369,7 @@ export function registerTools(server: McpServer, bridge: Bridge, decompiler: Dec
 					source: pageMeta,
 					notice: "Decompiled code is reconstructed, not original source. " + DATA_NOTICE,
 				};
-				return {
-					content: [
-						{ type: "text", text: text(meta) },
-						{ type: "text", text: sourceText },
-					],
-				};
+				return readScriptResult(meta, sourceText);
 			} catch (err) {
 				return errorResult(err, { tool: "read_script" });
 			}

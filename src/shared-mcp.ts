@@ -3,6 +3,7 @@ import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js';
 import {ListToolsRequestSchema,CallToolRequestSchema,type CallToolResult} from '@modelcontextprotocol/sdk/types.js';
 import {ServiceClient} from './service-client.js';
 import {SHARED_INSTRUCTIONS} from './instructions.js';
+import {readScriptResult} from './read-script-result.js';
 
 export async function startSharedMcp(){
 	const client=new ServiceClient();
@@ -10,7 +11,7 @@ export async function startSharedMcp(){
 	server.setRequestHandler(ListToolsRequestSchema,async()=>({tools:(await client.request('/api/catalog')).tools}));
 	server.setRequestHandler(CallToolRequestSchema,async request=>{
 		try{return await client.call(request.params.name,request.params.arguments??{}) as CallToolResult;}
-		catch(e){return{isError:true,content:[{type:'text',text:JSON.stringify({ok:false,error:{code:'service_unavailable',message:e instanceof Error?e.message:'Rift service unavailable.'}})}]};}
+		catch(e){const meta={ok:false,error:{code:'service_unavailable',message:e instanceof Error?e.message:'Rift service unavailable.'}};return request.params.name==='read_script'?readScriptResult(meta,undefined,true):{isError:true,content:[{type:'text',text:JSON.stringify(meta)}]};}
 	});
 	await server.connect(new StdioServerTransport());
 	process.stdin.on('end',()=>void server.close());return server;
