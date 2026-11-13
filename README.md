@@ -60,7 +60,7 @@ After reviewing the local preview for private information, explicitly call `shar
 
 ## Compatibility and execution boundary
 
-Reviewed M11 reader pin: `8e19dbe7338264a1e45eb1befac851a82fe00012`, build `224ebc6ae8c5`. Updated-reader live validation is pending. Earlier pin `dd4f905d4c026bf7cf45f1f5246ffc92da2d4dbb` remains immutable; historical pin `b18ac609754e3f690bd13ded367cfac06caf226f` does not include `exec_output_v1`. `/volt` and `VOLT_BRIDGE_*` remain compatibility identities; Volt is the external executor, not the product name. Other executors are not a compatibility claim.
+Reviewed M11 reader pin: `8e19dbe7338264a1e45eb1befac851a82fe00012`, build `224ebc6ae8c5`. All eight required updated-reader live checks passed for the observed Volt client; see `M11Inspection131126.md`. Earlier pin `dd4f905d4c026bf7cf45f1f5246ffc92da2d4dbb` remains immutable; historical pin `b18ac609754e3f690bd13ded367cfac06caf226f` does not include `exec_output_v1`. `/volt` and `VOLT_BRIDGE_*` remain compatibility identities; Volt is the external executor, not the product name. Other executors are not a compatibility claim.
 
 The six bounded legacy tools remain: `get_status`, `list_children`, `search_instances`, `inspect_instance`, `list_scripts`, `read_script`. Modules are never required for inspection; no generic remote-firing/hook/property-write API is added.
 

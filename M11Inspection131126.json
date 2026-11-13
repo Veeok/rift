@@ -1,21 +1,92 @@
 {
   "milestone": "M11",
-  "status": "live_validation_pending",
-  "complete": false,
+  "status": "complete_reviewed_build_observed_client",
+  "complete": true,
   "serviceBuild": "25eb0c3818967f5c",
   "readerBuild": "224ebc6ae8c5",
-  "nativeFull": {"passed":176,"total":183,"failed":7,"newM11Passed":59,"newM11Total":59,"baselinePassed":117,"baselineTotal":124},
-  "canonicalFocused": {"passed":82,"total":82,"typecheck":"passed"},
-  "privateBuild":"passed",
-  "privateTypecheck":"passed",
-  "codeModeSynthetic": {"passed":12,"total":12,"actualTransport":true,"liveRoblox":false},
-  "requiredLive": {"accepted":0,"total":8,"ids":["L01","L02","L03","L04","L05","L06","L07","L08"]},
-  "automatedRequirementIds":44,
-  "syntheticBeforeAfter": {"beforeService":"cd02b4bbf710b401","beforeCalls":4,"beforeJsonUtf8Bytes":2768,"afterService":"25eb0c3818967f5c","afterCalls":1,"afterJsonUtf8Bytes":2276,"sameResponder":true,"extraRootAfter":true,"extraPositionPropertyInBoth":true},
-  "liveBefore": {"readerBuild":"d018160c2392","calls":4,"responseJsonUtf8Bytes":3270},
-  "liveAfter":null,
-  "dashboardChanged":false,
-  "modelVisibleImageForwarding":"not_verified",
-  "M11_5": {"status":"planned_not_implemented","scope":"Rift reader and execution wrapper/harness protection","categories":["Preload","Memory","Virtual","Unlocker"],"efficacy":"unverified"},
-  "nextMilestoneStarted":false
+  "nativeFull": {
+    "passed": 176,
+    "total": 183,
+    "failed": 7,
+    "newM11Passed": 59,
+    "newM11Total": 59,
+    "baselinePassed": 117,
+    "baselineTotal": 124
+  },
+  "canonicalFocused": {
+    "passed": 82,
+    "total": 82,
+    "typecheck": "passed"
+  },
+  "privateBuild": "passed",
+  "privateTypecheck": "passed",
+  "codeModeSynthetic": {
+    "passed": 12,
+    "total": 12,
+    "actualTransport": true,
+    "liveRoblox": false
+  },
+  "requiredLive": {
+    "accepted": 8,
+    "total": 8,
+    "ids": [
+      "L01",
+      "L02",
+      "L03",
+      "L04",
+      "L05",
+      "L06",
+      "L07",
+      "L08"
+    ],
+    "manualLoads": true,
+    "placeId": 73832891834669
+  },
+  "automatedRequirementIds": 44,
+  "syntheticBeforeAfter": {
+    "beforeService": "cd02b4bbf710b401",
+    "beforeCalls": 4,
+    "beforeJsonUtf8Bytes": 2768,
+    "afterService": "25eb0c3818967f5c",
+    "afterCalls": 1,
+    "afterJsonUtf8Bytes": 2276,
+    "sameResponder": true,
+    "extraRootAfter": true,
+    "extraPositionPropertyInBoth": true
+  },
+  "liveBefore": {
+    "readerBuild": "d018160c2392",
+    "calls": 4,
+    "responseJsonUtf8Bytes": 3270
+  },
+  "liveAfter": {
+    "calls": 1,
+    "responseJsonUtf8Bytes": 2573,
+    "sameThreeChildNamesAndClasses": true,
+    "extraRoot": true,
+    "callsReductionPercent": 75,
+    "bytesReductionPercent": 21.31498470948012,
+    "partial": "queue_bound"
+  },
+  "publicationNative": {
+    "passed": 179,
+    "total": 179,
+    "retainedEarlierDashboard": true
+  },
+  "readerCommit": "8e19dbe7338264a1e45eb1befac851a82fe00012",
+  "sourceRevisionObserved": "66e6f8f121ab4bf0a391ad73b7e4ea263a50df317f6b4cbbcf6f4b47e15f7a4a",
+  "dashboardChanged": false,
+  "modelVisibleImageForwarding": "not_verified",
+  "M11_5": {
+    "status": "planned_not_implemented",
+    "scope": "Rift reader and execution wrapper/harness protection",
+    "categories": [
+      "Preload",
+      "Memory",
+      "Virtual",
+      "Unlocker"
+    ],
+    "efficacy": "unverified"
+  },
+  "nextMilestoneStarted": false
 }

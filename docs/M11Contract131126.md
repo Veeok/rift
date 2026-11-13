@@ -1,6 +1,6 @@
 # M11 Rift Inspection Foundation
 
-Status: implementing; not complete. Scope: backend inspection through existing MCP/shared-service/reader entry points. No dashboard rewrite, mutation tools, hooks, dependency installation, configuration/model changes or publication.
+Status: complete for reviewed service25eb0c3818967f5c / reader224ebc6ae8c5 and observed client. Scope: backend inspection through existing MCP/shared-service/reader entry points. No dashboard rewrite, mutation tools, hooks, dependency installation or configuration/model changes. Owner later explicitly authorized the scoped GitHub publication; see `../M11Inspection131126.md` for actual8/8 live and automated evidence/limitations.
 
 ## Architecture and reference
 
