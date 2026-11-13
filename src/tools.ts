@@ -6,7 +6,9 @@
 import { setTimeout as sleep } from "node:timers/promises";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { readScriptResult } from "./read-script-result.js";
+import { readScriptResult, budgetSourcePage } from "./read-script-result.js";
+import { toolResult, boundedToolResult } from "./tool-result.js";
+import { inspectionSchema, registerInspectionTools, requireInspectionReader } from "./inspection.js";
 import { z } from "zod";
 import { Bridge, BridgeError } from "./bridge.js";
 import { DecompileService, cacheKey, pageSource, type CacheEntry, type DecompileOptions, type Job, type ScriptInfo } from "./decompile.js";
@@ -57,7 +59,7 @@ function errorResult(err: unknown, extra: Payload = {}): CallToolResult {
 		error = { code: "internal", message: err instanceof Error ? err.message : String(err), retryable: false };
 	}
 	const payload = { ok: false, ...extra, error };
-	return extra.tool === "read_script" ? readScriptResult(payload, undefined, true) : { isError: true, content: [{ type: "text", text: text(payload) }] };
+	return extra.tool === "read_script" ? readScriptResult(payload, undefined, true) : toolResult(payload, { isError: true });
 }
 
 export function registerTools(server: McpServer, bridge: Bridge, decompiler: DecompileService, exec: ExecService): void {
@@ -92,7 +94,14 @@ export function registerTools(server: McpServer, bridge: Bridge, decompiler: Dec
 				new BridgeError("too_large", `response exceeds ${LIMITS.maxToolResponseChars} chars; request fewer items, properties or a shorter maxStringLength`),
 			);
 		}
-		return payload.tool === "read_script" ? readScriptResult(payload) : { content: [{ type: "text", text: out }] };
+		if (payload.tool === "read_script") return readScriptResult(payload);
+		try {
+			return Array.isArray(payload.items) && typeof payload.offset === "number"
+				? boundedToolResult(payload, LIMITS.maxToolResponseChars)
+				: toolResult(payload);
+		} catch (err) {
+			return errorResult(new BridgeError("too_large", err instanceof Error ? err.message : "response exceeds byte budget"));
+		}
 	};
 
 	const assertRef = (ref: RefT | undefined): void => {
@@ -181,27 +190,23 @@ export function registerTools(server: McpServer, bridge: Bridge, decompiler: Dec
 		{
 			title: "Search instances",
 			description:
-				"Breadth-first search under a root (default: game) by name and/or class. Work is bounded by maxVisited/maxDepth and a deadline; " +
+				"Breadth-first search under a root (default: game). Name, class, ancestry, typed scalar attributes/properties, tags, GUI text and effective visibility filters are ANDed. " +
+				"Richer filters require inspection_v1. Work is bounded by maxVisited/maxDepth and a deadline; " +
 				"results report partial=true with a reason when bounds are hit. Pagination re-runs the search, so results can shift if the tree changes.",
-			inputSchema: {
-				root: Ref.optional(),
-				name: z.string().min(1).max(200).optional(),
-				nameMatch: z.enum(["contains", "exact", "prefix"]).default("contains"),
-				caseSensitive: z.boolean().default(false),
-				className: z.string().min(1).max(100).optional(),
-				classMatch: z.enum(["isa", "exact"]).default("isa"),
-				maxDepth: z.number().int().min(1).max(64).default(32),
-				maxVisited: z.number().int().min(1).max(100_000).default(20_000),
-				offset: z.number().int().min(0).max(10_000).default(0),
-				limit: z.number().int().min(1).max(200).default(50),
-			},
+			inputSchema: inspectionSchema.search_instances,
 			annotations: readOnly,
 		},
 		async (args) => {
 			try {
-				if (!args.name && !args.className) throw new BridgeError("reader_error", "provide name and/or className", false, "bad_args");
+				const richer = args.ancestor || args.attributes?.length || args.tags || args.propertyFilters?.length || args.guiText || args.visible !== undefined;
+				if (!args.name && !args.className && !richer) throw new BridgeError("reader_error", "provide at least one supported search filter", false, "bad_args");
+				const reader = richer ? requireInspectionReader(bridge) : bridge.reader;
 				assertRef(args.root);
-				return finalize(envelope("search_instances", await bridge.request("search_instances", args, { deadlineMs: LIMITS.searchDeadlineMs })));
+				const result = await bridge.request("search_instances", args, { deadlineMs: LIMITS.searchDeadlineMs });
+				if (!reader || bridge.reader?.session !== reader.session || bridge.reader?.connectionId !== reader.connectionId) {
+					throw new BridgeError("reader_error", "Reader reconnected during search; retry with fresh references.", true, "stale_session");
+				}
+				return boundedToolResult(envelope("search_instances", result), Math.min(args.maxResponseChars, LIMITS.maxToolResponseChars));
 			} catch (err) {
 				return errorResult(err);
 			}
@@ -238,6 +243,8 @@ export function registerTools(server: McpServer, bridge: Bridge, decompiler: Dec
 			}
 		},
 	);
+
+	registerInspectionTools(server, bridge);
 
 	// 5. list_scripts
 	server.registerTool(
@@ -348,7 +355,10 @@ export function registerTools(server: McpServer, bridge: Bridge, decompiler: Dec
 				}
 				if (!entry) throw new BridgeError("reader_error", "no source available", true, "no_source");
 
-				const page = pageSource(entry, args.startLine, args.maxLines, LIMITS.readScriptMaxChars);
+				const cached = entry;
+				const budgeted = budgetSourcePage(maxChars => {
+				const page = pageSource(cached, args.startLine, args.maxLines, maxChars);
+				const responseLimited = maxChars < LIMITS.readScriptMaxChars;
 				const { text: sourceText, ...pageMeta } = page;
 				const meta: Payload = {
 					ok: true,
@@ -364,12 +374,14 @@ export function registerTools(server: McpServer, bridge: Bridge, decompiler: Dec
 					decompileElapsedMs: entry.elapsedMs,
 					lossyText: entry.lossy,
 					sourceTruncated: entry.truncated,
-					partial: entry.truncated || page.longLineTruncated,
-					partialReason: entry.truncated ? "source_limit" : page.longLineTruncated ? "long_line" : null,
-					source: pageMeta,
+					partial: entry.truncated || page.longLineTruncated || responseLimited,
+					partialReason: entry.truncated ? "source_limit" : page.longLineTruncated ? "long_line" : responseLimited ? "response_size" : null,
+					source: { ...pageMeta, ...(responseLimited ? { responseBudgetLimited: true } : {}) },
 					notice: "Decompiled code is reconstructed, not original source. " + DATA_NOTICE,
 				};
-				return readScriptResult(meta, sourceText);
+				return { metadata: meta, sourceText };
+				}, LIMITS.readScriptMaxChars);
+				return readScriptResult(budgeted.metadata, budgeted.sourceText);
 			} catch (err) {
 				return errorResult(err, { tool: "read_script" });
 			}

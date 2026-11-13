@@ -53,7 +53,12 @@ test('CM-04 source truncation and lossy-text flags survive structured results',a
 test('CM-05 long-line clipping preserves its separate indicator and exact displayed text',async()=>{
  const result=await read({lines:['x'.repeat(LIMITS.readScriptMaxChars+100)]});
  const meta=checkContract(result,result.content[1].text);assert.equal(meta.source.longLineTruncated,true);assert.equal(meta.partial,true);assert.equal(meta.partialReason,'long_line');assert.equal(meta.sourceTruncated,false);
- assert.equal(result.structuredContent.sourceText,'x'.repeat(LIMITS.readScriptMaxChars)+' --[[Rift: line truncated]]');assert.equal(meta.source.truncatedByCharLimit,true);
+ assert.match(result.structuredContent.sourceText,/^x+ --\[\[Rift: line truncated\]\]$/);assert.ok(result.structuredContent.sourceText.length<LIMITS.readScriptMaxChars);assert.equal(meta.source.responseBudgetLimited,true);assert.ok(Buffer.byteLength(JSON.stringify(result),'utf8')<=LIMITS.maxToolResponseChars);assert.equal(meta.source.truncatedByCharLimit,true);
+});
+test('M11 source pages bound the complete multibyte MCP envelope',async()=>{
+ const result=await read({lines:['漢'.repeat(60000)]});
+ assert.notEqual(result.isError,true);assert.ok(Buffer.byteLength(JSON.stringify(result),'utf8')<=LIMITS.maxToolResponseChars);
+ const source=result.structuredContent.sourceText,meta=checkContract(result,source);assert.ok(source.length>0);assert.equal(meta.source.responseBudgetLimited,true);assert.equal(meta.partial,true);
 });
 test('CM-06 pending jobs carry metadata and null source without inventing an empty page',async()=>{
  const job={id:'fixture-job',session,status:'running',createdAt:Date.now(),script,done:new Promise(()=>{})};
@@ -72,8 +77,8 @@ test('CM-09 shared-service guard errors expose the same structured fields withou
  try{const result=await service.call('read_script',{script:{path:['Synthetic']}});const meta=checkContract(result,null);assert.equal(result.isError,true);assert.equal(meta.ok,false);assert.equal(meta.error.code,'operation_failed');assert.match(meta.error.message,/session|select/i);}finally{await service.stop();}
 });
 test('CM-10 character-limited pages retain their next cursor without becoming long-line truncation',async()=>{
- const first='x'.repeat(LIMITS.readScriptMaxChars-20);
- const meta=checkContract(await read({lines:[first,'y'.repeat(30)]}),first);
+ const first='x'.repeat(LIMITS.readScriptMaxChars/2-20);
+ const meta=checkContract(await read({lines:[first,'y'.repeat(LIMITS.readScriptMaxChars)]}),first);
  assert.equal(meta.source.truncatedByCharLimit,true);assert.equal(meta.source.longLineTruncated,false);assert.equal(meta.source.nextStartLine,2);
 });
 test('CM-11 shared-adapter connection errors retain structured fields and isError',async()=>{

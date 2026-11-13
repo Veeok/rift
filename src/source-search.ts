@@ -50,7 +50,7 @@ export class SourceIndex {
 		const limit=Math.min(200,Math.max(1,args.limit??50)),page=items.slice(offset,offset+limit),more=offset+page.length<items.length;
 		return{schemaVersion:1,sessionId:args.sessionId,snapshot:fingerprint,query:args.query,items:page,totalMatches:items.length,
 			coverage:{eligibleScripts:!args.pathFilter?Math.max(eligible.length,this.inventory.knownTotal??0):eligible.length,searchedScripts,missingSource,staleSource},partial:missingSource>0||staleSource>0||capped||!this.inventory.complete,
-			inventory:{complete:this.inventory.complete,enumeratedScripts:eligible.length,knownEligibleScripts:this.inventory.knownTotal??null,countKind:args.pathFilter?'enumerated_path_filtered':this.inventory.knownTotal===undefined?'enumerated':'known_total',reason:this.inventory.reason??null},
+			inventory:{complete:this.inventory.complete,enumeratedScripts:eligible.length,knownEligibleScripts:args.pathFilter?(this.inventory.complete?eligible.length:null):(this.inventory.knownTotal??null),countKind:args.pathFilter?'enumerated_path_filtered':this.inventory.knownTotal===undefined?'enumerated':'known_total',reason:this.inventory.reason??null},
 			truncated:more||capped,nextCursor:more?Buffer.from(JSON.stringify([fingerprint,offset+page.length])).toString('base64url'):null,
 			notice:'Literal search of authorized source already present. Missing/stale source is not fetched or decompiled. No matches are not proof of absence when coverage is incomplete.'};
 	}

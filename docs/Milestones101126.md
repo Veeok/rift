@@ -17,6 +17,8 @@ No installs or additional headless model tests. Preserve credentials, unrelated 
 | M8 | Canonical rename, final export and approved dedicated GitHub update verified | Exact-install migration, old/new conflicts, credential-preserving rollback, clean local export and immutable reader pin |
 | M9 | Actual approved-execution warning arrived after MCP return with explicit run attribution | Bounded session/sequence cursors, delayed `exec_output_v1` messages, known-run/session/connection association, gaps and redaction; no native-console claim |
 | M10 | Actual warning traced to approved input line 2 and exact submitted revision | Authorized cached source plus `provided_execution`, literal/case/path filters, raw-input revisions, redaction before clipping, bounded pagination and honest incomplete coverage; no implicit reconstruction |
+| M11 | Integration under verification; actual updated-reader checks pending | Compact structured subtree/batch inspection, combined filters, coverage-aware source discovery and revision-bound excerpts. Binding inventory: `M11Contract131126.md`; do not mark complete before L01–L08. |
+| M11.5 | Planned by owner; not implemented | Rift Protection: investigate and define anti-detection mechanisms for Rift's reader and its in-game execution wrapper/harness, covering the requested Preload, Memory, Virtual and Unlocker categories. Eclipse is a feature reference, not verified implementation evidence. Follows M11 and precedes M12; no protection/account-safety claim before controlled validation. |
 
 ## Verification inventory
 

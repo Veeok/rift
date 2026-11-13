@@ -9,7 +9,7 @@ local CONFIG = {
 	token = "__VOLT_BRIDGE_TOKEN__",
 	protocol = 1,
 	readerVersion = "0.1.0",
-	readerBuild = "d018160c2392", -- sha256 prefix of this template, stamped by npm run setup
+	readerBuild = "224ebc6ae8c5", -- sha256 prefix of this template, stamped by npm run setup
 	connectBackoff = { 1, 2, 5, 10, 20, 30 }, -- seconds between initial-connect attempts
 	giveUpAfterSeconds = 30 * 60, -- stop trying to connect after this long without a bridge
 	-- Unauthenticated this long on one socket => close it and open one new socket. Live test on Volt 1.3.21.2
@@ -708,7 +708,7 @@ if CONFIG.allowExec then
 end
 
 local function capabilities()
-	local caps = {}
+	local caps = { "inspection_v1" }
 	for _, k in ipairs({
 		"WebSocket",
 		"getscripts",
@@ -759,6 +759,252 @@ local function readerInfo()
 end
 
 local OPS = {}
+
+-- Inspection operations deliberately do not enumerate properties via getproperties.
+local function inspectionInt(value, name, lo, hi, default)
+	if value == nil then return default end
+	if type(value) ~= "number" or value ~= value or value % 1 ~= 0 or value < lo or value > hi then
+		fail("bad_args", name .. " is out of range")
+	end
+	return value
+end
+
+local function inspectionArray(value, max)
+	if type(value) ~= "table" or #value > max then return false end
+	local count = 0
+	for key in pairs(value) do
+		if type(key) ~= "number" or key % 1 ~= 0 or key < 1 or key > #value then return false end
+		count += 1
+	end
+	return count == #value
+end
+
+local function inspectionRefShape(ref, optional)
+	if ref == nil and optional then return end
+	if type(ref) ~= "table" then fail("bad_args", "reference must be an object") end
+	if ref.id ~= nil then
+		if type(ref.id) ~= "string" or #ref.id < 3 or #ref.id > 64 then fail("bad_args", "invalid reference id") end
+	elseif not inspectionArray(ref.path, 64) or #ref.path < 1 then
+		fail("bad_args", "reference requires id or path")
+	end
+	if ref.path ~= nil then
+		if not inspectionArray(ref.path, 64) or #ref.path < 1 then fail("bad_args", "invalid reference path") end
+		for _, name in ipairs(ref.path) do
+			if type(name) ~= "string" or #name < 1 or #name > 200 then fail("bad_args", "invalid path segment") end
+		end
+	end
+end
+
+local function inspectionOptions(args)
+	if type(args) ~= "table" then fail("bad_args", "arguments must be an object") end
+	local names = args.properties == nil and {} or args.properties
+	if not inspectionArray(names, 32) then fail("bad_args", "properties must be an array of at most 32 names") end
+	for _, name in ipairs(names) do
+		if type(name) ~= "string" or #name < 1 or #name > 100 then fail("bad_args", "invalid property name") end
+	end
+	return {
+		names = names,
+		maxProperties = inspectionInt(args.maxProperties, "maxProperties", 1, 32, 8),
+		maxResponseChars = inspectionInt(args.maxResponseChars, "maxResponseChars", 2048, 100000, 40000),
+		maxStringLength = inspectionInt(args.maxStringLength, "maxStringLength", 16, 4000, 500),
+		maxTableDepth = inspectionInt(args.maxTableDepth, "maxTableDepth", 0, 4, 0),
+	}
+end
+
+local function inspectionResolve(ref, ctx)
+	if ref == nil then return game end
+	if ref.id then
+		local inst = lookupId(ref.id)
+		local _, rooted = pathSegments(inst)
+		if inst ~= game and not rooted then fail("detached_object", "object is detached, destroyed, or streamed out") end
+		return inst
+	end
+	local cur = game
+	for _, name in ipairs(ref.path) do
+		if ctx.expired() then fail("deadline", "deadline while resolving path") end
+		local ok, list = pcall(function() return cur:GetChildren() end)
+		if not ok or type(list) ~= "table" then fail("unreadable", "cannot enumerate path segment") end
+		local found = nil
+		for i, child in ipairs(list) do
+			if i > 10000 then fail("path_limit", "path resolution exceeded sibling limit; use an id") end
+			if i % 128 == 0 and ctx.expired() then fail("deadline", "deadline while resolving path") end
+			if safeName(child) == name then
+				if found then fail("ambiguous_path", "duplicate path segment; use an object id") end
+				found = child
+			end
+		end
+		if not found then fail("not_found", "path segment not found: " .. name) end
+		cur = found
+	end
+	return cur
+end
+
+local function inspectionSerialize(value, depth, opts, budget)
+	if typeof(value) ~= "table" then return serialize(value, depth, opts) end
+	if depth >= opts.maxTableDepth then return { t = "table", omitted = "depth" } end
+	if budget.remaining <= 0 then return { t = "table", omitted = "budget" } end
+	budget.remaining -= 1
+	local isArray = #value > 0 and next(value, #value) == nil
+	if isArray then
+		local out = {}
+		for i, v in ipairs(value) do
+			if i > 50 or budget.remaining <= 0 then break end
+			budget.remaining -= 1
+			out[i] = inspectionSerialize(v, depth + 1, opts, budget)
+		end
+		return { t = "array", items = out, count = #value }
+	end
+	local entries, n = {}, 0
+	for k, v in pairs(value) do
+		n += 1
+		if n > 50 or budget.remaining <= 0 then break end
+		budget.remaining -= 1
+		local key = tostring(k)
+		key = safeText(key)
+		if #key > 200 then key = string.sub(key, 1, 200); key = safeText(key) end
+		entries[key] = inspectionSerialize(v, depth + 1, opts, budget)
+	end
+	return { t = "table", entries = entries, truncated = (n > 50 or budget.remaining <= 0) or nil }
+end
+
+local function inspectionItem(inst, options, ctx)
+	local _, rooted = pathSegments(inst)
+	if inst ~= game and not rooted then fail("detached_object", "object is detached, destroyed, or streamed out") end
+	local item = { object = describe(inst), properties = {}, errors = {} }
+	local parent = safeGet(inst, "Parent")
+	if parent then item.parentId = idFor(parent) end
+	local opts = { maxStringLength = options.maxStringLength, maxTableDepth = options.maxTableDepth }
+	for i, name in ipairs(options.names) do
+		if i > options.maxProperties then break end
+		if ctx.expired() then
+			table.insert(item.errors, { part = "properties", code = "deadline", message = "deadline while reading properties" })
+			break
+		end
+		local ok, value = pcall(function() return inst[name] end)
+		if ok then
+			local encoded, valueOrError = pcall(inspectionSerialize, value, 0, opts, { remaining = 128 })
+			if encoded then item.properties[name] = valueOrError else
+				table.insert(item.errors, { part = "property", name = name, code = "serialize_failed", message = "property serialization failed" })
+			end
+		else
+			table.insert(item.errors, { part = "property", name = name, code = "unreadable", message = "property is unreadable" })
+		end
+	end
+	item.propertyCount = { requested = #options.names, omitted = math.max(0, #options.names - options.maxProperties) }
+	return item
+end
+
+local function inspectionError(err)
+	if type(err) == "table" and type(err.code) == "string" then
+		return { code = err.code, message = tostring(err.message or err.code) }
+	end
+	return { code = "unreadable", message = "object could not be inspected" }
+end
+
+local function inspectionFits(result, limit)
+	local ok, encoded = pcall(HttpService.JSONEncode, HttpService, result)
+	return ok and #encoded <= limit - 512
+end
+
+OPS.get_subtree = function(args, ctx)
+	local options = inspectionOptions(args)
+	inspectionRefShape(args.target, true)
+	local depthLimit = inspectionInt(args.maxDepth, "maxDepth", 0, 16, 2)
+	local visitedLimit = inspectionInt(args.maxVisited, "maxVisited", 1, 10000, 1000)
+	local nodeLimit = inspectionInt(args.maxNodes, "maxNodes", 1, 200, 50)
+	local offset = inspectionInt(args.offset, "offset", 0, 10000, 0)
+	local root = inspectionResolve(args.target, ctx)
+	local queue = { { node = root, depth = 0 } }
+	local head, tail, visited = 1, 1, 0
+	local result = { observedAt = nowIso(), root = describe(root), items = {}, visited = 0, returned = 0, offset = offset,
+		hasMore = false, partial = false, limitsReached = {}, omissions = {}, pagination = "reobservation" }
+	if not inspectionFits(result, options.maxResponseChars) then fail("response_size", "root identity exceeds response budget") end
+	while head <= tail do
+		if ctx.expired() then result.partialReason = "deadline"; break end
+		if visited >= visitedLimit then result.partialReason = "max_visited"; break end
+		local entry = queue[head]; queue[head] = nil; head += 1; visited += 1
+		if visited > offset then
+			if #result.items >= nodeLimit then result.hasMore = true; result.limitsReached.maxNodes = true; break end
+			local ref = { id = idFor(entry.node) }
+			local ok, item = pcall(inspectionItem, entry.node, options, ctx)
+			if not ok then item = { ref = ref, error = inspectionError(item) } end
+			if not ok or (item.errors and #item.errors > 0) then result.partialReason = result.partialReason or "item_errors" end
+			item.depth = entry.depth
+			table.insert(result.items, item)
+			if not inspectionFits(result, options.maxResponseChars) then
+				table.remove(result.items); result.hasMore = true; result.partialReason = "response_size"; break
+			end
+			if ctx.expired() then result.partialReason = "deadline"; break end
+		end
+		if entry.depth < depthLimit then
+			local ok, list = pcall(function() return entry.node:GetChildren() end)
+			if not ok or type(list) ~= "table" then
+				result.omissions.unreadableChildren = (result.omissions.unreadableChildren or 0) + 1
+				result.partialReason = result.partialReason or "unreadable_children"
+			else
+				for _, child in ipairs(list) do
+					if ctx.expired() then result.partialReason = "deadline"; break end
+					if tail >= visitedLimit then result.partialReason = result.partialReason or "queue_bound"; result.hasMore = true; break end
+					tail += 1; queue[tail] = { node = child, depth = entry.depth + 1 }
+				end
+			end
+		else
+			local ok, child = pcall(function() return entry.node:FindFirstChildWhichIsA("Instance") end)
+			if not ok or child ~= nil then result.limitsReached.maxDepth = true end
+		end
+	end
+	result.visited = visited
+	result.returned = #result.items
+	if result.hasMore then
+		if #result.items > 0 and offset + #result.items < visitedLimit then
+			result.nextOffset = offset + #result.items
+		else
+			result.hasMore = false
+			result.omissions.continuation = "increase_maxVisited"
+		end
+	end
+	if #options.names > options.maxProperties then
+		result.omissions.propertiesPerItem = #options.names - options.maxProperties
+		result.limitsReached.maxProperties = true
+		result.partialReason = result.partialReason or "max_properties"
+	end
+	if result.limitsReached.maxDepth then result.partialReason = result.partialReason or "max_depth" end
+	result.partial = result.partialReason ~= nil
+	if result.partialReason then result.limitsReached[result.partialReason] = true end
+	return result
+end
+
+OPS.inspect_instances = function(args, ctx)
+	local options = inspectionOptions(args)
+	if not inspectionArray(args.targets, 50) or #args.targets < 1 then fail("bad_args", "targets must contain 1 to 50 references") end
+	for _, ref in ipairs(args.targets) do inspectionRefShape(ref, false) end
+	local result = { observedAt = nowIso(), items = {}, returned = 0, offset = 0, hasMore = false, partial = false, omissions = {} }
+	for index, ref in ipairs(args.targets) do
+		local ok, item = pcall(function()
+			if ctx.expired() then fail("deadline", "inspection deadline exceeded") end
+			return inspectionItem(inspectionResolve(ref, ctx), options, ctx)
+		end)
+		if not ok then item = { error = inspectionError(item) } end
+		if not ok and item.error.code == "deadline" then result.partial, result.partialReason = true, "deadline" end
+		if not ok or (item.errors and #item.errors > 0) then result.partial = true; result.partialReason = result.partialReason or "item_errors" end
+		item.index, item.ref = index, ref
+		table.insert(result.items, item)
+		if not inspectionFits(result, options.maxResponseChars) then
+			table.remove(result.items)
+			result.partial, result.partialReason = true, "response_size"
+			result.omissions.items = #args.targets - index + 1
+			result.hasMore, result.nextOffset = true, index - 1
+			break
+		end
+	end
+	result.returned = #result.items
+	if #options.names > options.maxProperties then
+		result.omissions.propertiesPerItem = #options.names - options.maxProperties
+		result.partial = true
+		result.partialReason = result.partialReason or "max_properties"
+	end
+	return result
+end
 
 OPS.status = function()
 	local sc = state.scriptCache
@@ -813,8 +1059,103 @@ OPS.list_children = function(args)
 	}
 end
 
+-- Only stable, scalar-readable properties can be used in search predicates.
+local SEARCH_PROPERTIES = { Name = true, ClassName = true, Text = true, Visible = true, Enabled = true,
+	Value = true, Transparency = true, Anchored = true, CanCollide = true, Volume = true }
+local SEARCH_OPS = { eq = true, ne = true, contains = true, prefix = true, gt = true, gte = true, lt = true, lte = true, exists = true }
+
+local function searchString(value, name, max)
+	if type(value) ~= "string" or #value == 0 or #value > max then fail("bad_args", "invalid " .. name) end
+end
+
+local function searchPredicates(value, field, property)
+	if value == nil then return end
+	if not inspectionArray(value, 32) then fail("bad_args", field .. " must be an array of at most 32 predicates") end
+	for _, predicate in ipairs(value) do
+		if type(predicate) ~= "table" then fail("bad_args", "invalid " .. field .. " predicate") end
+		for key in pairs(predicate) do if key ~= "name" and key ~= "op" and key ~= "value" then fail("bad_args", "unknown predicate field") end end
+		searchString(predicate.name, field .. " name", 100)
+		if property and not SEARCH_PROPERTIES[predicate.name] then fail("bad_args", "unsupported property filter: " .. predicate.name) end
+		local op, v = predicate.op, predicate.value
+		if not SEARCH_OPS[op] then fail("bad_args", "unsupported predicate operation") end
+		local kind = type(v)
+		if op == "exists" then
+			if kind ~= "boolean" then fail("bad_args", "exists requires a boolean value") end
+		elseif op == "contains" or op == "prefix" then
+			if kind ~= "string" or #v > 1000 then fail("bad_args", "string predicate requires a string value") end
+		elseif op == "gt" or op == "gte" or op == "lt" or op == "lte" then
+			if kind ~= "number" or v ~= v or v == math.huge or v == -math.huge then fail("bad_args", "ordered predicate requires a finite number") end
+		elseif not (kind == "string" and #v <= 1000 or kind == "boolean" or kind == "number" and v == v and v ~= math.huge and v ~= -math.huge) then
+			fail("bad_args", "equality predicate requires a finite scalar")
+		end
+	end
+end
+
+local function searchCompare(actual, predicate)
+	local op, expected = predicate.op, predicate.value
+	if op == "exists" then return (actual ~= nil) == expected end
+	if type(actual) ~= type(expected) then return false end
+	if type(actual) == "number" and (actual ~= actual or actual == math.huge or actual == -math.huge) then return false end
+	if op == "eq" then return actual == expected end
+	if op == "ne" then return actual ~= expected end
+	if op == "contains" then return string.find(actual, expected, 1, true) ~= nil end
+	if op == "prefix" then return string.sub(actual, 1, #expected) == expected end
+	if op == "gt" then return actual > expected end
+	if op == "gte" then return actual >= expected end
+	if op == "lt" then return actual < expected end
+	if op == "lte" then return actual <= expected end
+	return false
+end
+
+local function searchValidate(args)
+	if type(args) ~= "table" then fail("bad_args", "arguments must be an object") end
+	if not (type(args.root) == "table" and args.root.id == nil and args.root.path == nil) then inspectionRefShape(args.root, true) end
+	inspectionRefShape(args.ancestor, true)
+	if args.name ~= nil then searchString(args.name, "name", 200) end
+	if args.className ~= nil then searchString(args.className, "className", 100) end
+	if args.nameMatch ~= nil and args.nameMatch ~= "contains" and args.nameMatch ~= "exact" and args.nameMatch ~= "prefix" then fail("bad_args", "invalid nameMatch") end
+	if args.classMatch ~= nil and args.classMatch ~= "exact" and args.classMatch ~= "isa" then fail("bad_args", "invalid classMatch") end
+	if args.caseSensitive ~= nil and type(args.caseSensitive) ~= "boolean" then fail("bad_args", "invalid caseSensitive") end
+	if args.visible ~= nil and type(args.visible) ~= "boolean" then fail("bad_args", "invalid visible") end
+	searchPredicates(args.attributes, "attributes", false); searchPredicates(args.propertyFilters, "propertyFilters", true)
+	local tagCount = 0
+	if args.tags ~= nil then
+		if type(args.tags) ~= "table" then fail("bad_args", "invalid tags") end
+		for key in pairs(args.tags) do if key ~= "all" and key ~= "any" and key ~= "none" then fail("bad_args", "unknown tags field") end end
+		for _, key in ipairs({ "all", "any", "none" }) do
+			local list = args.tags[key]
+			if list ~= nil then
+				if not inspectionArray(list, 32) then fail("bad_args", "invalid tag list") end
+				for _, tag in ipairs(list) do searchString(tag, "tag", 100); tagCount += 1 end
+			end
+		end
+	end
+	if args.guiText ~= nil then
+		if type(args.guiText) ~= "table" then fail("bad_args", "invalid guiText") end
+		for key in pairs(args.guiText) do if key ~= "value" and key ~= "match" and key ~= "caseSensitive" then fail("bad_args", "unknown guiText field") end end
+		searchString(args.guiText.value, "guiText.value", 1000)
+		local mode = args.guiText.match
+		if mode ~= nil and mode ~= "contains" and mode ~= "exact" and mode ~= "prefix" then fail("bad_args", "invalid guiText.match") end
+		if args.guiText.caseSensitive ~= nil and type(args.guiText.caseSensitive) ~= "boolean" then fail("bad_args", "invalid guiText.caseSensitive") end
+	end
+	if not args.name and not args.className and not args.ancestor and not args.guiText and args.visible == nil
+		and #(args.attributes or {}) == 0 and #(args.propertyFilters or {}) == 0 and tagCount == 0 then
+		fail("bad_args", "provide at least one search filter")
+	end
+	inspectionInt(args.maxDepth, "maxDepth", 1, 64, 32)
+	inspectionInt(args.maxVisited, "maxVisited", 1, 100000, 20000)
+	inspectionInt(args.offset, "offset", 0, 10000, 0)
+	inspectionInt(args.limit, "limit", 1, 200, 50)
+	inspectionInt(args.maxResponseChars, "maxResponseChars", 2048, 100000, 40000)
+end
+
 OPS.search_instances = function(args, ctx)
-	local root = resolveRef(args.root)
+	searchValidate(args)
+	local rootRef = args.root
+	if type(rootRef) == "table" and rootRef.id == nil and rootRef.path == nil then rootRef = nil end
+	local root = inspectionResolve(rootRef, ctx)
+	local ancestor = args.ancestor and inspectionResolve(args.ancestor, ctx) or nil
+	local omissions = { visibility = 0, unreadable = 0 }
 	local caseSensitive = args.caseSensitive == true
 	local name = type(args.name) == "string" and args.name or nil
 	if name and not caseSensitive then
@@ -823,13 +1164,12 @@ OPS.search_instances = function(args, ctx)
 	local nameMatch = args.nameMatch or "contains"
 	local className = type(args.className) == "string" and args.className or nil
 	local exactClass = args.classMatch == "exact"
-	if not name and not className then
-		fail("bad_args", "provide name and/or className")
-	end
 	local maxDepth = clampInt(args.maxDepth, 1, 64, 32)
 	local maxVisited = clampInt(args.maxVisited, 1, 100000, 20000)
 	local offset = clampInt(args.offset, 0, 10000, 0)
 	local limit = clampInt(args.limit, 1, 200, 50)
+	local maxResponseChars = inspectionInt(args.maxResponseChars, "maxResponseChars", 2048, 100000, 40000)
+	local rootDescription = describe(root)
 
 	local function matches(inst)
 		if className then
@@ -846,12 +1186,77 @@ OPS.search_instances = function(args, ctx)
 			if not caseSensitive then
 				n = string.lower(n)
 			end
-			if nameMatch == "exact" then
-				return n == name
-			elseif nameMatch == "prefix" then
-				return string.sub(n, 1, #name) == name
+			if nameMatch == "exact" and n ~= name then return false end
+			if nameMatch == "prefix" and string.sub(n, 1, #name) ~= name then return false end
+			if nameMatch == "contains" and not string.find(n, name, 1, true) then return false end
+		end
+		if ancestor then
+			local ok, desc = pcall(function() return inst:IsDescendantOf(ancestor) end)
+			if not ok then omissions.unreadable += 1; return false end
+			if not desc then return false end
+		end
+		for _, pred in ipairs(args.attributes or {}) do
+			if ctx.expired() then return false end
+			local ok, value = pcall(function() return inst:GetAttribute(pred.name) end)
+			if not ok then omissions.unreadable += 1; return false end
+			if type(value) == "string" and #value > 100000 then omissions.unreadable += 1; return false end
+			if not searchCompare(value, pred) then return false end
+		end
+		for _, pred in ipairs(args.propertyFilters or {}) do
+			if ctx.expired() then return false end
+			local ok, value = pcall(function() return inst[pred.name] end)
+			if not ok then omissions.unreadable += 1; return false end
+			if type(value) == "string" and #value > 100000 then omissions.unreadable += 1; return false end
+			if not searchCompare(value, pred) then return false end
+		end
+		if args.tags then
+			local function has(tag)
+				if ctx.expired() then return nil end
+				local ok, value = pcall(CollectionService.HasTag, CollectionService, inst, tag)
+				if not ok then omissions.unreadable += 1; return nil end
+				return value == true
 			end
-			return string.find(n, name, 1, true) ~= nil
+			for _, tag in ipairs(args.tags.all or {}) do if has(tag) ~= true then return false end end
+			for _, tag in ipairs(args.tags.none or {}) do if has(tag) ~= false then return false end end
+			if #(args.tags.any or {}) > 0 then
+				local any = false
+				for _, tag in ipairs(args.tags.any) do if has(tag) == true then any = true; break end end
+				if not any then return false end
+			end
+		end
+		if args.guiText then
+			if not isA(inst, "GuiObject") then return false end
+			local ok, text = pcall(function() return inst.Text end)
+			if not ok or type(text) ~= "string" then return false end
+			if #text > 100000 then omissions.unreadable += 1; return false end
+			local needle = args.guiText.value
+			if not args.guiText.caseSensitive then text, needle = string.lower(text), string.lower(needle) end
+			local mode = args.guiText.match or "contains"
+			if mode == "exact" and text ~= needle then return false end
+			if mode == "prefix" and string.sub(text, 1, #needle) ~= needle then return false end
+			if mode == "contains" and not string.find(text, needle, 1, true) then return false end
+		end
+		if args.visible ~= nil then
+			local current, visible, scanned = inst, true, 0
+			while current and current ~= game do
+				scanned += 1
+				if scanned > 64 or ctx.expired() then omissions.visibility += 1; return false end
+				local okGui, gui = pcall(function() return current:IsA("GuiObject") end)
+				local okLayer, layer = pcall(function() return current:IsA("LayerCollector") end)
+				if not okGui or not okLayer then omissions.visibility += 1; return false end
+				if current == inst and not gui and not layer then return false end
+				local prop = gui and "Visible" or (layer and "Enabled" or nil)
+				if prop then
+					local ok, value = pcall(function() return current[prop] end)
+					if not ok or type(value) ~= "boolean" then omissions.visibility += 1; return false end
+					if not value then visible = false end
+				end
+				local ok, parent = pcall(function() return current.Parent end)
+				if not ok then omissions.visibility += 1; return false end
+				current = parent
+			end
+			if current ~= game then omissions.visibility += 1; return false end
+			if visible ~= args.visible then return false end
 		end
 		return true
 	end
@@ -860,6 +1265,7 @@ OPS.search_instances = function(args, ctx)
 	local head, tail = 1, 1
 	local visited, matched = 0, 0
 	local items = {}
+	if not inspectionFits({ root = rootDescription, items = items }, maxResponseChars) then fail("response_size", "root identity exceeds response budget") end
 	local hasMore, partialReason = false, nil
 	local depthPruned = false
 	while head <= tail do
@@ -880,6 +1286,9 @@ OPS.search_instances = function(args, ctx)
 			if matched > offset then
 				if #items < limit then
 					table.insert(items, describe(node))
+					if not inspectionFits({ root = rootDescription, items = items }, maxResponseChars) then
+						table.remove(items); hasMore = true; partialReason = "response_size"; break
+					end
 				else
 					hasMore = true
 					break
@@ -887,17 +1296,19 @@ OPS.search_instances = function(args, ctx)
 			end
 		end
 		if depth < maxDepth then
-			if tail - head > 200000 then
-				partialReason = "queue_bound"
-			else
-				for _, c in ipairs(children(node)) do
+			do
+				local ok, list = pcall(function() return node:GetChildren() end)
+				if not ok or type(list) ~= "table" then omissions.unreadable += 1; list = {} end
+				for _, c in ipairs(list) do
+					if ctx.expired() then partialReason = "deadline"; break end
+					if tail >= maxVisited then partialReason = partialReason or "queue_bound"; break end
 					tail += 1
 					queue[tail], depths[tail] = c, depth + 1
 				end
 			end
 		else
 			-- Reaching maxDepth is only incomplete when this frontier has descendants.
-			local ok, child = pcall(node.FindFirstChildWhichIsA, node, "Instance")
+			local ok, child = pcall(function() return node:FindFirstChildWhichIsA("Instance") end)
 			if not ok or child ~= nil then
 				depthPruned = true
 			end
@@ -909,20 +1320,24 @@ OPS.search_instances = function(args, ctx)
 	if not partialReason and not hasMore and head <= tail then
 		partialReason = "unfinished"
 	end
+	if ctx.expired() then partialReason = "deadline" end
 	if not partialReason and depthPruned then
 		partialReason = "max_depth"
 	end
+	if not partialReason and (omissions.visibility > 0 or omissions.unreadable > 0) then partialReason = "unreadable" end
 	return {
 		observedAt = nowIso(),
-		root = describe(root),
+		root = rootDescription,
 		visited = visited,
 		offset = offset,
 		limit = limit,
+		returned = #items,
 		items = items,
 		hasMore = hasMore,
 		nextOffset = hasMore and (offset + #items) or nil,
 		partial = partialReason ~= nil,
 		partialReason = partialReason,
+		omissions = omissions,
 	}
 end
 
@@ -1042,6 +1457,7 @@ OPS.inspect_instance = function(args)
 
 	-- Path ambiguity: duplicate sibling names along the path make name-based lookups pick the first match.
 	local ambiguous = {}
+	local pathComplete = true
 	local cur, depth = target, 0
 	while cur ~= nil and cur ~= game and depth < 64 do
 		local parent = safeGet(cur, "Parent")
@@ -1049,8 +1465,11 @@ OPS.inspect_instance = function(args)
 			break
 		end
 		local nm, same, index = safeName(cur), 0, nil
-		for i, sib in ipairs(children(parent)) do
+		local okSiblings, siblings = pcall(parent.GetChildren, parent)
+		if not okSiblings or type(siblings) ~= "table" then pathComplete = false; siblings = {} end
+		for i, sib in ipairs(siblings) do
 			if i > 5000 then
+				pathComplete = false
 				break
 			end
 			if safeName(sib) == nm then
@@ -1070,6 +1489,7 @@ OPS.inspect_instance = function(args)
 		cur, depth = parent, depth + 1
 	end
 	local segs, rooted = pathSegments(target)
+	pathComplete = pathComplete and rooted and cur == game
 	local encodedSegs = {}
 	for i, s in ipairs(segs) do
 		encodedSegs[i] = encodeString(s, 200)
@@ -1078,7 +1498,8 @@ OPS.inspect_instance = function(args)
 		segments = encodedSegs,
 		rooted = rooted,
 		ambiguousSegments = #ambiguous > 0 and ambiguous or nil,
-		unique = #ambiguous == 0,
+		complete = pathComplete,
+		unique = pathComplete and #ambiguous == 0,
 	}
 	local okP, parent = pcall(function()
 		return target.Parent
@@ -1622,6 +2043,15 @@ local function onMessage(message, isBinary)
 	end
 	local t = msg.type
 	if t == "hello" then
+		if state.connectionId ~= nil then
+			-- References belong to one authenticated transport, not merely one bootstrap run.
+			state.session = HttpService:GenerateGUID(false)
+			state.shortSession = string.sub(state.session, 1, 8)
+			state.connectionId = nil
+			state.scriptCache = nil
+			registry.cur, registry.curInv, registry.prev, registry.prevInv = {}, {}, {}, {}
+			registry.count, registry.counter = 0, 0
+		end
 		state.execOutputEpoch += 1
 		-- New transport (first connect or Volt's automatic reconnect): authenticate again.
 		state.authed = false

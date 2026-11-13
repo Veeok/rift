@@ -20,6 +20,8 @@ export interface ScriptInfo {
 export interface CacheEntry {
 	key: string;
 	session: string;
+	connectionId: string | null;
+	sourceText: string;
 	lines: string[];
 	chars: number;
 	hash: string | null;
@@ -37,6 +39,7 @@ export interface Job {
 	id: string;
 	key: string;
 	session: string;
+	connectionId: string | null;
 	status: JobStatus;
 	createdAt: number;
 	finishedAt: number | null;
@@ -97,6 +100,10 @@ export class DecompileService {
 	lookup(key: string): CacheEntry | null {
 		const e = this.cache.get(key);
 		if (!e) return null;
+		if (e.connectionId !== (this.bridge.reader?.connectionId ?? null)) {
+			this.evict(key);
+			return null;
+		}
 		if (e.hash === null && Date.now() - e.storedAt > LIMITS.noHashCacheTtlMs) {
 			// Without a bytecode hash we cannot detect changes; expire quickly.
 			this.evict(key);
@@ -110,7 +117,8 @@ export class DecompileService {
 
 	getJob(id: string): Job | null {
 		this.pruneJobs();
-		return this.jobs.get(id) ?? null;
+		const job = this.jobs.get(id);
+		return job && job.connectionId === (this.bridge.reader?.connectionId ?? null) ? job : null;
 	}
 
 	/** Authorized source already present; this never starts native work. */
@@ -134,8 +142,9 @@ export class DecompileService {
 	start(session: string, info: ScriptInfo, options: DecompileOptions | undefined): Job {
 		this.pruneJobs();
 		const key = cacheKey(session, info, options);
+		const connectionId = this.bridge.reader?.connectionId ?? null;
 		for (const job of this.jobs.values()) {
-			if (job.key === key && (job.status === "queued" || job.status === "running")) return job;
+			if (job.key === key && job.connectionId === connectionId && (job.status === "queued" || job.status === "running")) return job;
 		}
 		if (this.activeJobCount() >= LIMITS.maxDecompileJobs) {
 			throw new BridgeError("queue_full", `${LIMITS.maxDecompileJobs} decompile jobs already queued or running; poll them first`, true);
@@ -144,6 +153,7 @@ export class DecompileService {
 			id: "dj_" + randomBytes(6).toString("hex"),
 			key,
 			session,
+			connectionId,
 			status: "queued",
 			createdAt: Date.now(),
 			finishedAt: null,
@@ -180,6 +190,8 @@ export class DecompileService {
 		return {
 			key: job.key,
 			session: job.session,
+			connectionId: job.connectionId,
+			sourceText: source,
 			lines: source.split(/\r?\n/),
 			chars: source.length,
 			// Prefer the hash observed at decompile time; it may differ from script_info if bytecode changed.
@@ -197,6 +209,7 @@ export class DecompileService {
 		await this.acquire();
 		try {
 			if (job.status !== "queued") return; // invalidated while queued
+			if (this.bridge.session !== job.session || (this.bridge.reader?.connectionId ?? null) !== job.connectionId) throw new BridgeError("disconnected", "reader connection changed before decompile", true);
 			job.status = "running";
 			const raw = await this.bridge.request(
 				"decompile",
@@ -204,13 +217,13 @@ export class DecompileService {
 				{
 					deadlineMs: LIMITS.decompileDeadlineMs,
 					onLate: (late) => {
-						if (this.bridge.session !== job.session) return;
+						if (this.bridge.session !== job.session || (this.bridge.reader?.connectionId ?? null) !== job.connectionId) return;
 						this.store(this.toEntry(job, info, late));
 						log.info(`late decompile result cached for ${info.object.path}`);
 					},
 				},
 			);
-			if (this.bridge.session !== job.session) throw new BridgeError("disconnected", "reader session changed during decompile", true);
+			if (this.bridge.session !== job.session || (this.bridge.reader?.connectionId ?? null) !== job.connectionId) throw new BridgeError("disconnected", "reader connection changed during decompile", true);
 			this.store(this.toEntry(job, info, raw));
 			job.status = "done";
 		} catch (err) {

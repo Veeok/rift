@@ -16,7 +16,7 @@ async function fixture(options={}){
  const readerPort=await port(),svc=await startService({port:readerPort,apiPort:await port(),token,tokenFile:'unused',tokenError:null,allowExec:true});let reader;
  const send=frame=>reader.ws.send(JSON.stringify({v:1,type:'log',...frame}));
  const connect=(extra={})=>connectReader({port:readerPort,token,build:svc.status().build.expectedReaderBuild,capabilities:['exec','exec_output_v1'],handler:m=>m.op==='exec'?outcome:m.op==='list_scripts'?{items:[],total:0,hasMore:false,cache:{builtObservedAt:'empty-inventory'}}:{},...extra});
- reader=await connect(options);return{svc,send,connect,get reader(){return reader;},set reader(value){reader=value;},async close(){await reader?.close();await svc.stop();}};
+ reader=await connect(options);return{svc,send,connect,get reader(){return reader;},set reader(value){reader=value;},async close(){await reader?.close();await until(()=>!svc.bridge.reader);await svc.stop();}};
 }
 test('M9-09 delayed execution frames retain explicit known run attribution after return',async()=>{
  const f=await fixture();try{const result=parsed(await f.svc.call('execute_luau',{source,confirm:true}));assert.equal(result.status,'completed');f.send({producer:'exec_capture',runId:result.runId,level:'warn',message:'DELAYED_SOURCE_MARKER'});await until(()=>f.svc.status().activity.lastSequence===1);const row=parsed(await f.svc.call('get_logs',{})).items[0];assert.equal(row.runId,result.runId);assert.equal(row.attribution,'run');assert.equal(row.source,'provided_execution');assert.equal(row.severity,'warn');assert.equal(row.details.sourceId,'exec:'+result.runId);assert.equal(row.details.revision,createHash('sha256').update(source).digest('hex'));assert.match(row.details.outputSourceVerification,/native.*unverified/i);}finally{await f.close();}
@@ -44,7 +44,17 @@ test('approved execution source reads disclose credential redaction without chan
  const f=await fixture();try{const input='print("'+token+'")';const run=parsed(await f.svc.call('execute_luau',{source:input,confirm:true}));const read=await f.svc.call('read_script',{script:{id:'exec:'+run.runId}}),meta=parsed(read);assert.equal(meta.revision,createHash('sha256').update(input).digest('hex'));assert.equal(meta.contentRedacted,true);assert.match(read.content[1].text,/\[REDACTED\]/);assert.ok(!JSON.stringify(read).includes(token));}finally{await f.close();}
 });
 test('provided-source page redacts a complete credential before the long-line boundary',async()=>{
- const f=await fixture();try{const input='--'+'a'.repeat(59988)+token;const run=parsed(await f.svc.call('execute_luau',{source:input,confirm:true}));const read=await f.svc.call('read_script',{script:{id:'exec:'+run.runId},startLine:1,maxLines:1}),meta=parsed(read);assert.notEqual(read.isError,true);assert.ok(!read.content[1].text.includes(token.slice(0,10)),'page leaked credential prefix');assert.match(read.content[1].text,/\[REDACTED\]/);assert.equal(meta.contentRedacted,true);assert.equal(meta.revision,createHash('sha256').update(input).digest('hex'));assert.equal(meta.totalLines,1);}finally{await f.close();}
+ const f=await fixture();try{
+  const probe=parsed(await f.svc.call('execute_luau',{source:'--'+token+'a'.repeat(70000),confirm:true}));
+  const probeRead=await f.svc.call('read_script',{script:{id:'exec:'+probe.runId},startLine:1,maxLines:1}),marker=' --[[Rift: line truncated]]';
+  assert.ok(probeRead.content[1].text.endsWith(marker));
+  const boundary=probeRead.content[1].text.length-marker.length;
+  // Straddle the actual envelope-limited boundary, not the old UTF-16-only constant.
+  const input='--'+'a'.repeat(boundary-12)+token+'tail'.repeat(100);
+  const run=parsed(await f.svc.call('execute_luau',{source:input,confirm:true}));
+  const read=await f.svc.call('read_script',{script:{id:'exec:'+run.runId},startLine:1,maxLines:1}),meta=parsed(read);
+  assert.notEqual(read.isError,true);assert.ok(!read.content[1].text.includes(token.slice(0,10)),'page leaked credential prefix');assert.match(read.content[1].text,/\[REDACTED\]/);assert.equal(meta.contentRedacted,true);assert.equal(meta.revision,createHash('sha256').update(input).digest('hex'));assert.equal(meta.totalLines,1);assert.ok(Buffer.byteLength(JSON.stringify(read),'utf8')<=120000);
+ }finally{await f.close();}
 });
 test('provided-source search redacts before excerpt end and retains submitted revision',async()=>{
  const f=await fixture();try{const input='--MARK '+'a'.repeat(220)+token;const run=parsed(await f.svc.call('execute_luau',{source:input,confirm:true}));const found=parsed(await f.svc.call('search_source',{query:'MARK'})),hit=found.items.find(row=>row.scriptId==='exec:'+run.runId);assert.ok(hit,'non-secret marker must remain searchable');assert.ok(!hit.excerpt.includes(token.slice(0,10)),'excerpt leaked credential prefix');assert.match(hit.excerpt,/\[REDACTED\]/);assert.equal(hit.contentRedacted,true);assert.equal(hit.revision,createHash('sha256').update(input).digest('hex'));assert.equal(hit.line,1);}finally{await f.close();}
