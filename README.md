@@ -19,11 +19,14 @@ Start the single owner explicitly and leave its terminal running:
 # second terminal:
 .\rift.cmd status --json
 .\rift.cmd doctor --json
+.\rift.cmd dashboard
 ```
 
 Open http://127.0.0.1:38918. Unlock with the local token from ignored `.env`; never put it in a URL, screenshot or report. The page clears the token input immediately; dashboard authentication uses an HttpOnly/SameSite cookie, not localStorage. Theme preferences alone may persist in localStorage. OpenCode runs `dist/index.js --shared`, not a competing reader listener. Stop a legacy standalone owner before starting `serve`. Inspection commands never start a hidden service.
 
 After upgrading Rift, reconnect existing OpenCode MCP connections to refresh their initialization instructions.
+
+`rift dashboard` opens the configured local URL in your default browser and returns immediately. It respects `RIFT_API_PORT`/`VOLT_BRIDGE_API_PORT`, does not start another service, and never includes credentials in the URL. Use `.\rift.cmd dashboard` when running directly from a Windows checkout.
 
 Connect your Roblox client by manually running the locally rendered `.secrets/rift-bootstrap.local.luau` reader in Volt. There is no separate editor, playtest fixture, plugin or game-server companion to install.
 

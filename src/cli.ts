@@ -3,8 +3,9 @@ import {loadConfig} from './config.js';
 import {startService,EXIT_CODES} from './service.js';
 import {ServiceClient,apiPort} from './service-client.js';
 import {makeRedactor} from './redact.js';
+import childProcess from 'node:child_process';
 
-const help=`Rift - local Roblox client inspection and opt-in approved execution\n\nUsage: rift status [--json]\n       rift doctor [--json]\n       rift serve\n       rift setup [--apply] [--config <OpenCode JSON/JSONC path>]\n       rift migrate [--apply | --rollback] [--config <path>]\n\nNo command starts a background service. Start serve explicitly, then use OpenCode and the local dashboard together.\nExit codes: 0 healthy; 2 bridge offline; 3 no client; 4 build mismatch; 5 stale; 6 configuration/authentication/selection; 64 usage; 70 unexpected failure.\n`;
+const help=`Rift - local Roblox client inspection and opt-in approved execution\n\nUsage: rift status [--json]\n       rift doctor [--json]\n       rift dashboard\n       rift serve\n       rift setup [--apply] [--config <OpenCode JSON/JSONC path>]\n       rift migrate [--apply | --rollback] [--config <path>]\n\nDashboard opens the configured local URL in your default browser. No command starts a background service. Start serve explicitly, then use OpenCode and the local dashboard together.\nExit codes: 0 success; 2 bridge offline; 3 no client; 4 build mismatch; 5 stale; 6 configuration/authentication/selection; 64 usage; 70 unexpected failure.\n`;
 function human(s:any,doctor:boolean):string{
 	const lines=[`Rift · ${s.state}`,`Session  ${s.session?.name??'—'} · ${s.session?.clientName??'no client'} (${s.session?.id??'none'})`,
 		`Build    ${s.build?.serviceBuild??'not running'} · reader ${s.build?.reportedReaderBuild??'—'}`,`Updated  ${s.freshness?.lastUpdate??'never'}${s.freshness?.ageMs===null?'':` (${s.freshness?.ageMs??0} ms ago)`}`,
@@ -16,12 +17,20 @@ function human(s:any,doctor:boolean):string{
 export async function runCli(argv:string[]):Promise<number>{
 	const command=argv[0],json=argv.includes('--json');
 	if(!command||command==='--help'||command==='help'){process.stdout.write(help);return 0;}
-	if(!['status','doctor','serve','setup','migrate'].includes(command)){process.stderr.write('Unknown Rift command. Use rift --help.\n');return 64;}
+	if(!['status','doctor','dashboard','serve','setup','migrate'].includes(command)){process.stderr.write('Unknown Rift command. Use rift --help.\n');return 64;}
 	if(command==='setup'||command==='migrate'){
 		const path='./windows-setup.js';const setup=await import(path);return setup.runSetup(argv);
 	}
-	if(argv.slice(1).some(x=>x!=='--json')||command==='serve'&&json){process.stderr.write('Unsupported arguments. Use rift --help.\n');return 64;}
+	if(argv.slice(1).some(x=>x!=='--json')||['serve','dashboard'].includes(command)&&json){process.stderr.write('Unsupported arguments. Use rift --help.\n');return 64;}
+	let dashboardUrl:string|null=null;
 	try{
+		if(command==='dashboard'){
+			dashboardUrl=`http://127.0.0.1:${apiPort()}`;
+			const executable=process.platform==='win32'?'rundll32.exe':process.platform==='darwin'?'open':'xdg-open';
+			const args=process.platform==='win32'?['url.dll,FileProtocolHandler',dashboardUrl]:[dashboardUrl];
+			await new Promise<void>((resolve,reject)=>{const child=childProcess.spawn(executable,args,{shell:false,detached:true,stdio:'ignore',windowsHide:true});child.once('error',reject);child.once('spawn',()=>{child.unref();resolve();});});
+			process.stdout.write(`Opening ${dashboardUrl} in your default browser.\n`);return 0;
+		}
 		if(command==='serve'){
 			const config=loadConfig();const service=await startService({...config,apiPort:apiPort()});
 			process.stderr.write(`Rift service ready · http://127.0.0.1:${service.apiPort}\n`);
@@ -34,7 +43,8 @@ export async function runCli(argv:string[]):Promise<number>{
 		const offline=(e as any).code==='bridge_offline',state=offline?'bridge_offline':'configuration_error';
 		const redact=makeRedactor(Object.entries(process.env).filter(([k,v])=>/token|secret|password|api.key/i.test(k)&&!!v).map(([,v])=>v!));
 		const message=redact(e instanceof Error?e.message:'Rift failed.');
-		const recovery=offline?'Start node dist/cli.js serve in the Rift folder.':'Run rift setup to preview the local configuration, then rift doctor.';
+		const recovery=command==='dashboard'?(dashboardUrl?`Open ${dashboardUrl} manually in your browser.`:'Correct RIFT_API_PORT (1024–65535), then retry rift dashboard.'):offline?'Start node dist/cli.js serve in the Rift folder.':'Run rift setup to preview the local configuration, then rift doctor.';
+		if(command==='dashboard')process.stderr.write(`Could not launch the dashboard: ${message}\n`);
 		const value={schemaVersion:1,apiVersion:1,state,observedAt:new Date().toISOString(),session:null,build:null,freshness:{lastUpdate:null,ageMs:null,staleAfterMs:15000},capabilities:[],activity:null,error:{check:offline?'bridge_online':'configuration',message,recovery},...(command==='doctor'?{ok:false,failedCheck:offline?'bridge_online':'configuration',recovery,checks:[{id:offline?'bridge_online':'configuration',pass:false}]}:{})};
 		process.stdout.write(json?JSON.stringify(value)+'\n':human(value,command==='doctor'));return offline?2:6;
 	}
