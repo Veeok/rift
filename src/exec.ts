@@ -15,6 +15,10 @@ import { Bridge, BridgeError } from "./bridge.js";
 import { LIMITS } from "./limits.js";
 import { log } from "./log.js";
 import { createHash } from "node:crypto";
+import {decidePreloadAdmission,type Admission,type ProtectionError} from './protection-policy.js';
+import {ProtectionStore,type ProtectionSnapshotProvider} from './protection-store.js';
+import {DEFAULT_PROTECTION_FILE} from './config.js';
+import {OwnedUiRuntime,type OwnedUiPolicy} from './owned-ui-runtime.js';
 
 export type ExecStatus = "completed" | "compile_error" | "runtime_error" | "duplicate" | "timeout" | "disconnected" | "rejected";
 
@@ -43,6 +47,8 @@ export interface ExecOutcome {
 	duplicateOfPreviousRun: boolean;
 	rejectionCode: string | null;
 	note: string;
+	protection?: Admission & {preloadRequested:boolean|null;error?:ProtectionError;scope?:string;wholeScriptProtected?:false;preparationUnknown?:boolean};
+	ownedUi?: unknown;
 }
 
 interface Retained {
@@ -74,7 +80,12 @@ export class ExecService {
 	constructor(
 		private readonly bridge: Bridge,
 		private readonly enabled: boolean,
-	) {}
+		private readonly protection: ProtectionSnapshotProvider = new ProtectionStore(DEFAULT_PROTECTION_FILE),
+	) {this.ownedUi=new OwnedUiRuntime(bridge);}
+	private readonly ownedUi:OwnedUiRuntime;
+	preloadView(){return this.ownedUi.view();}
+	refreshPreloadView(){return this.ownedUi.refresh();}
+	closeOwnedUi(runId:string,confirm:boolean){if(confirm!==true)throw new Error('Explicit confirm:true is required to close an owned context.');return this.ownedUi.close(runId);}
 
 	get isEnabled(): boolean {
 		return this.enabled;
@@ -172,10 +183,12 @@ export class ExecService {
 
 	async run(
 		source: unknown,
-		opts: { confirm?: boolean; runId?: string; deadlineMs?: number; sourceHash?: string } = {},
+		opts: { confirm?: boolean; runId?: string; deadlineMs?: number; sourceHash?: string; allowUnprotected?:boolean; signal?:AbortSignal } = {},
 	): Promise<ExecOutcome> {
 		const text = typeof source === "string" ? source : "";
 		const proposedId = opts.runId?.trim();
+		const allowUnprotected = opts.allowUnprotected === true;
+		let ownedPolicy:OwnedUiPolicy|undefined;
 
 		// A caller-supplied runId only ever references an earlier run; it never authorises a new
 		// execution. Unknown or evicted ids are refused rather than re-run, so eviction cannot
@@ -220,7 +233,68 @@ export class ExecService {
 			outcome.note = `Refused: source is ${text.length} chars; the limit is ${LIMITS.execMaxSourceChars}.`;
 			return this.remember(outcome, opts.sourceHash ?? "");
 		}
+		{
+			const expected=this.bridge.reader;
+			let snapshot;
+			let timer:ReturnType<typeof setTimeout>|undefined;
+			const signal=opts.signal;
+			let cancel:()=>void=()=>{};
+			try{
+				if(signal?.aborted)throw new Error('protection_preflight_cancelled');
+				const stopped=new Promise<never>((_,reject)=>{
+					timer=setTimeout(()=>reject(new Error('protection_preflight_timeout')),5_000);
+					cancel=()=>reject(new Error('protection_preflight_cancelled'));
+					signal?.addEventListener('abort',cancel,{once:true});
+				});
+				snapshot=await Promise.race([this.protection.snapshot(),stopped]);
+			}catch(error){
+				if(error instanceof Error&&['protection_preflight_timeout','protection_preflight_cancelled'].includes(error.message)){
+					outcome.rejectionCode=error.message;outcome.protection={mode:'refused',reason:null,preloadRequested:null};
+					outcome.note='Preference preflight stopped before dispatch. Nothing was sent or queued for later execution.';
+					return this.remember(outcome,opts.sourceHash??'');
+				}
+				snapshot={preferences:{schemaVersion:1 as const,preload:false,memory:false,virtual:false,unlocker:false},error:{code:'read_failed' as const,message:'Unable to read protection preferences',retryable:true}};
+			}finally{clearTimeout(timer);signal?.removeEventListener('abort',cancel);}
+			if(signal?.aborted){
+				outcome.rejectionCode='protection_preflight_cancelled';outcome.protection={mode:'refused',reason:null,preloadRequested:null};
+				outcome.note='Caller cancelled before dispatch. Nothing was sent to the reader.';return this.remember(outcome,opts.sourceHash??'');
+			}
+			if(snapshot.error){
+				outcome.protection={mode:'refused',reason:null,preloadRequested:null,error:snapshot.error};
+				outcome.rejectionCode='protection_preferences_error';
+				outcome.note='Protection preferences could not be read. Nothing was dispatched; repair or explicitly save preferences before retrying.';
+				return this.remember(outcome,opts.sourceHash??'');
+			}
+			let admission=decidePreloadAdmission(snapshot.preferences,'unverified',allowUnprotected);
+			outcome.protection={...admission,preloadRequested:snapshot.preferences.preload};
+			if(!expected||this.bridge.reader?.session!==expected.session||this.bridge.reader?.connectionId!==expected.connectionId){
+				outcome.rejectionCode='protection_session_changed';outcome.note='Reader changed during protection preflight. Nothing was dispatched.';
+				return this.remember(outcome,opts.sourceHash??'');
+			}
+			if(snapshot.preferences.preload&&this.ownedUi.isCandidate(text)){
+				outcome.runId=`${expected.connectionId}-${Date.now().toString(36)}-${++this.seq}`;
+				try{ownedPolicy=await this.ownedUi.prepare(outcome.runId,signal);}
+				catch(error){
+					outcome.rejectionCode='owned_ui_preparation_failed';outcome.protection={mode:'refused',reason:'backend_unverified',preloadRequested:true,scope:'context_created_only',wholeScriptProtected:false,preparationUnknown:(error as any)?.preparationUnknown===true};
+					outcome.note=error instanceof Error?error.message:'Owned UI preparation failed; source was not dispatched.';
+					if(outcome.protection.preparationUnknown){outcome.unknownOutcome=true;outcome.clientMayStillBeRunning=true;}
+					return this.remember(outcome,opts.sourceHash??'');
+				}
+				admission=decidePreloadAdmission(snapshot.preferences,'supported',false);
+				if(signal?.aborted||this.bridge.reader?.session!==expected.session||this.bridge.reader?.connectionId!==expected.connectionId){
+					await this.ownedUi.close(outcome.runId).catch(()=>undefined);outcome.rejectionCode='owned_ui_preparation_stale';outcome.note='Caller or reader changed after preparation. Source was not dispatched.';
+					return this.remember(outcome,opts.sourceHash??'');
+				}
+				outcome.protection={...admission,preloadRequested:true,scope:'context_created_only',wholeScriptProtected:false};
+			}
+			if(admission.mode==='refused'){
+				outcome.rejectionCode='preload_unverified';
+				outcome.note='Preload is requested, but no protected-workload backend is accepted. confirm:true alone is not an override. Explicit approval for this exact source with allowUnprotected:true permits only one unprotected run and leaves the saved preference On.';
+				return this.remember(outcome,opts.sourceHash??'');
+			}
+		}
 		if (this.inFlight >= LIMITS.execMaxQueue) {
+			if(ownedPolicy)await this.ownedUi.close(outcome.runId).catch(()=>undefined);
 			outcome.rejectionCode = "exec_queue_full";
 			outcome.note = `Refused: ${this.inFlight} executions are already in flight; the limit is ${LIMITS.execMaxQueue}.`;
 			return this.remember(outcome, opts.sourceHash ?? "");
@@ -236,7 +310,7 @@ export class ExecService {
 		}
 
 		// Run ids stay inside the reader's accepted pattern: [A-Za-z0-9._-], 1-64 chars.
-		const runId = `${reader.connectionId}-${Date.now().toString(36)}-${++this.seq}`;
+		const runId = outcome.runId || `${reader.connectionId}-${Date.now().toString(36)}-${++this.seq}`;
 		outcome.runId = runId;
 		outcome.reader = { session: reader.session, connectionId: reader.connectionId, placeId: reader.placeId, jobId: reader.jobId };
 
@@ -245,7 +319,8 @@ export class ExecService {
 			revision: createHash('sha256').update(text).digest('hex'), observedAt: outcome.sentAt});
 		this.inFlight += 1;
 		try {
-			const raw = (await this.bridge.request("exec", { runId, source: text }, { deadlineMs })) as Record<string, unknown>;
+			const raw = (await this.bridge.request("exec", { runId, source: text, ...(ownedPolicy?{policy:ownedPolicy}:{}) }, { deadlineMs })) as Record<string, unknown>;
+			if(ownedPolicy){outcome.ownedUi=raw.ownedUi;this.ownedUi.observe(runId,raw.ownedUi);}
 
 			const duplicate = raw.duplicate === true;
 			const compiled = raw.compiled === true;
@@ -282,6 +357,7 @@ export class ExecService {
 			return this.remember(outcome, opts.sourceHash ?? "");
 		} catch (err) {
 			outcome.completedAt = new Date().toISOString();
+			if(ownedPolicy&&err instanceof BridgeError&&err.code==='reader_error')outcome.protection={mode:'refused',reason:'backend_unverified',preloadRequested:true,scope:'context_created_only',wholeScriptProtected:false};
 			if (err instanceof BridgeError && err.code === "deadline_exceeded") {
 				outcome.status = "timeout";
 				outcome.unknownOutcome = true;

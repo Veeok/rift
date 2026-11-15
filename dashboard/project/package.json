@@ -1,0 +1,21 @@
+{
+  "name": "rift-m115-private-reconstruction",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test --test-reporter=tap test/*.test.mjs",
+    "dev": "vite --mode preview",
+    "build": "vite build --mode preview",
+    "build:runtime": "vite build --mode runtime",
+    "preview": "vite preview --mode preview"
+  },
+  "dependencies": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "playwright-core": "1.65.1",
+    "vite": "7.3.7"
+  }
+}

@@ -9,11 +9,12 @@ import {toolResult} from './tool-result.js';
 export async function startSharedMcp(){
 	const client=new ServiceClient();
 	const server=new Server({name:'Rift',version:'0.3.0'},{capabilities:{tools:{}},instructions:SHARED_INSTRUCTIONS});
+	const lifetime=new AbortController();server.onclose=()=>lifetime.abort();
 	server.setRequestHandler(ListToolsRequestSchema,async()=>({tools:(await client.request('/api/catalog')).tools}));
-	server.setRequestHandler(CallToolRequestSchema,async request=>{
-		try{return await client.call(request.params.name,request.params.arguments??{}) as CallToolResult;}
+	server.setRequestHandler(CallToolRequestSchema,async(request,extra)=>{
+		try{return await client.call(request.params.name,request.params.arguments??{},AbortSignal.any([extra.signal,lifetime.signal])) as CallToolResult;}
 		catch(e){const meta={ok:false,error:{code:'service_unavailable',message:e instanceof Error?e.message:'Rift service unavailable.'}};return request.params.name==='read_script'||request.params.name==='get_source_excerpt'?readScriptResult(meta,undefined,true):toolResult(meta,{isError:true});}
 	});
 	await server.connect(new StdioServerTransport());
-	process.stdin.on('end',()=>void server.close());return server;
+	process.stdin.on('end',()=>{lifetime.abort();void server.close();});return server;
 }

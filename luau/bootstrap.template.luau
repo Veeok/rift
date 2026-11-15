@@ -688,20 +688,24 @@ end
 
 -- Never hook shared globals. Verify that the executor actually applies a private
 -- chunk environment (some implementations silently ignore setfenv).
-local function installExecCapture(chunk, capturePrint, captureWarn)
+local function installExecCapture(chunk, capturePrint, captureWarn, context)
 	local base = READER_ENV or getfenv(0)
-	local env = setmetatable({ print = capturePrint, warn = captureWarn }, { __index = base })
+	local env = setmetatable({ print = capturePrint, warn = captureWarn, RiftUI = context }, { __index = base })
 	setfenv(chunk, env)
 	assert(getfenv(chunk) == env, "per-chunk environment unavailable")
 end
 
 local execOutputAvailable = false
+local ownedUiEnvironmentAvailable = false
+local ownedUiRuntime
 if CONFIG.allowExec then
 	local ok, supported = pcall(function()
-		local probe = assert(loadstring("return print, warn", "=rift-capture-check"))
+		local probe = assert(loadstring("return print, warn, RiftUI", "=rift-capture-check"))
 		local a, b = function() end, function() end
-		installExecCapture(probe, a, b)
-		local p, w = probe()
+		local marker = {}
+		installExecCapture(probe, a, b, marker)
+		local p, w, ui = probe()
+		ownedUiEnvironmentAvailable = ui == marker
 		return p == a and w == b
 	end)
 	execOutputAvailable = ok and supported == true
@@ -726,6 +730,7 @@ local function capabilities()
 	end
 	if CONFIG.allowExec then
 		table.insert(caps, "exec")
+		if ownedUiRuntime and ownedUiEnvironmentAvailable then table.insert(caps, "owned_ui_v1") end
 		if execOutputAvailable then
 			table.insert(caps, "exec_output_v1")
 		end
@@ -1752,6 +1757,692 @@ local function previewValue(v, depth, seen, budget)
 	return spend("<" .. t .. ">")
 end
 
+
+-- Resource-scoped owned UI runtime. Nothing validates or allocates while Off.
+local OWNED_UI_EXAMPLE_SOURCE="-- Reviewed cooperative factory example. No whole-script concealment claim.\nlocal ui = assert(RiftUI, \"This example requires a prepared RiftUI context\")\nlocal function make(class, properties, parent)\n    local node, problem = ui:create(class, properties, parent)\n    assert(node, problem and problem.code)\n    return node\nend\nlocal root = make(\"ScreenGui\", {Name=\"RiftOwnedUiExample\", ResetOnSpawn=false})\nlocal image = make(\"ImageLabel\", {Name=\"ExampleImage\", Image=\"rbxassetid://3926307971\", Size=UDim2.fromOffset(120,120), Position=UDim2.fromOffset(24,100)}, root)\ntask.defer(function()\n    make(\"Frame\", {Name=\"DeferredOwnedFrame\", Size=UDim2.fromOffset(8,8)}, image)\nend)\nreturn \"Factory resources remain owned until explicit close; raw producers and prior asset history are outside coverage.\"\n"
+-- Dormant offline scaffolding: no runtime caller or accepted native backend.
+local function createOwnedUiContext(options)
+	local function rejected(code)
+		return nil, { code = code }
+	end
+	if type(options) ~= "table" or getmetatable(options) ~= nil then
+		return rejected("invalid_context")
+	end
+	if options.enabled == nil or options.enabled == false then
+		return rejected("policy_off")
+	end
+	local maxResources = options.maxResources
+	local maxDepth = options.maxDepth
+	if maxResources == nil then maxResources = 512 end
+	if maxDepth == nil then maxDepth = 32 end
+	local function boundedInteger(value, maximum)
+		return type(value) == "number" and value >= 1 and value <= maximum and value == math.floor(value)
+	end
+	if options.enabled ~= true or type(options.runId) ~= "string" or #options.runId == 0 or #options.runId > 128
+		or type(options.generation) ~= "string" or #options.generation == 0 or #options.generation > 128
+		or not boundedInteger(maxResources, 512) or not boundedInteger(maxDepth, 32) then
+		return rejected("invalid_context")
+	end
+	local backend = options.backend
+	if type(backend) ~= "table" or getmetatable(backend) ~= nil or typeof(backend.root) ~= "Instance"
+		or type(backend.isCurrent) ~= "function" then
+		return rejected("backend_unavailable")
+	end
+	local root, isCurrent = backend.root, backend.isCurrent
+	local runId, generation = options.runId, options.generation
+	local function current()
+		if backend.root ~= root or backend.isCurrent ~= isCurrent then return false end
+		local ok, valid = pcall(isCurrent, generation)
+		return ok and valid == true and backend.root == root and backend.isCurrent == isCurrent
+	end
+	if not current() then return rejected("stale_generation") end
+	local classes = {
+		ScreenGui = true, Folder = true, Frame = true, ScrollingFrame = true, CanvasGroup = true,
+		ImageLabel = true, ImageButton = true, TextLabel = true, TextButton = true, TextBox = true,
+		ViewportFrame = true, UICorner = true, UIStroke = true, UIPadding = true, UIListLayout = true,
+		UIGridLayout = true, UIGradient = true, UIAspectRatioConstraint = true, UISizeConstraint = true,
+		UITextSizeConstraint = true,
+	}
+	local entries, owned = {}, {}
+	local closed, revoked = false, false
+	local counts = {
+		runId = runId, generation = generation, state = "open", created = 0, active = 0, destroyed = 0,
+		retainedOwned = 0, transferred = 0, foreignRoots = 0, foreignTruncated = false,
+		cleanupFailures = 0, residualFailedCreates = 0, diagnostics = {}, liveProtectionVerified = false,
+		coverage = "context_created_only",
+	}
+	local context = {}
+	local function diagnostic(code)
+		counts.cleanupFailures += 1
+		if #counts.diagnostics < 32 then table.insert(counts.diagnostics, { code = code }) end
+	end
+	local function parentDepth(parent, allowResidual)
+		if parent == root then return 0 end
+		local entry = owned[parent]
+		if not entry or not (entry.active or (allowResidual and entry.residual)) then return nil, "foreign_parent" end
+		local depth = entry.depth
+		for _ = 1, maxDepth do
+			local ok, actualParent = pcall(function() return entry.node.Parent end)
+			if not ok then return nil, "ancestry_unreadable" end
+			if actualParent ~= entry.expectedParent then return nil, "stale_parent" end
+			if actualParent == root then return depth end
+			entry = owned[actualParent]
+			if not entry or not (entry.active or (allowResidual and entry.residual)) then return nil, "stale_parent" end
+		end
+		return nil, "stale_parent"
+	end
+	function context:summary()
+		local result = table.clone(counts)
+		result.diagnostics = {}
+		for _, item in ipairs(counts.diagnostics) do table.insert(result.diagnostics, table.clone(item)) end
+		return result
+	end
+	function context:create(className, properties, parent)
+		if closed then return rejected("context_closed") end
+		if revoked then return rejected("context_revoked") end
+		if type(className) ~= "string" or not classes[className] then return rejected("unsupported_class") end
+		if properties == nil then properties = {} end
+		if type(properties) ~= "table" or getmetatable(properties) ~= nil then return rejected("invalid_properties") end
+		if rawget(properties, "Parent") ~= nil then return rejected("parent_property") end
+		local propertyCount, setup = 0, {}
+		for name, value in pairs(properties) do
+			propertyCount += 1
+			if type(name) ~= "string" or #name > 100 or propertyCount > 128 then return rejected("invalid_properties") end
+			setup[name] = value
+		end
+		if not current() then return rejected("stale_generation") end
+		if closed then return rejected("context_closed") end
+		if revoked then return rejected("context_revoked") end
+		if parent == nil then parent = root end
+		local depth, parentError = parentDepth(parent)
+		if depth == nil then return rejected(parentError) end
+		if counts.active + counts.residualFailedCreates >= maxResources then return rejected("resource_limit") end
+		if depth + 1 > maxDepth then return rejected("depth_limit") end
+		local ok, node = pcall(Instance.new, className)
+		if not ok then return rejected("allocation_failed") end
+		local entry = { node = node, expectedParent = parent, depth = depth + 1, active = true, published = false }
+		table.insert(entries, entry)
+		owned[node] = entry
+		counts.created += 1
+		counts.active += 1
+		local function failed(code)
+			if not entry.active then return nil, { code = code, cleanupFailed = false } end
+			-- Never recursively destroy foreign objects, even on failed publication.
+			local readable, children = pcall(function() return node:GetChildren() end)
+			local parentRead, actualParent = pcall(function() return node.Parent end)
+			local destroyed = false
+			if readable and #children == 0 and parentRead and (actualParent == nil or actualParent == parent) then
+				destroyed = pcall(function() node:Destroy() end)
+			end
+			entry.active = false
+			counts.active -= 1
+			if destroyed then
+				owned[node] = nil
+				table.remove(entries, table.find(entries, entry))
+				counts.destroyed += 1
+			else
+				entry.residual = true
+				counts.residualFailedCreates += 1
+				diagnostic("failed_creation_cleanup")
+			end
+			if closed then counts.retainedOwned = counts.active + counts.residualFailedCreates end
+			return nil, { code = code, cleanupFailed = not destroyed }
+		end
+		for name, value in pairs(setup) do
+			local assigned = pcall(function() node[name] = value end)
+			if not assigned then return failed("property_failed") end
+		end
+		-- Property callbacks can invalidate a previously checked parent or generation.
+		if not current() then return failed("stale_generation") end
+		if closed then return failed("context_closed") end
+		if revoked then return failed("context_revoked") end
+		local latestDepth, latestError = parentDepth(parent)
+		if latestDepth == nil then return failed(latestError) end
+		local parented = pcall(function() node.Parent = parent end)
+		if not parented then return failed("parenting_failed") end
+		entry.published = true
+		if not current() then return failed("stale_generation") end
+		if closed then return failed("context_closed") end
+		if revoked then return failed("context_revoked") end
+		local publishedDepth, publishedError = parentDepth(node)
+		if publishedDepth == nil then return failed(publishedError) end
+		return node, nil
+	end
+	function context:revoke(reason)
+		if not closed then
+			revoked = true
+			counts.state = "revoked"
+			counts.reason = type(reason) == "string" and string.sub(reason, 1, 120) or "revoked"
+		end
+		return self:summary()
+	end
+	function context:close()
+		if closed then return self:summary() end
+		closed = true
+		counts.state = "closed"
+		local inspectedChildren = 0
+		for i = #entries, 1, -1 do
+			local entry = entries[i]
+			if entry.active or entry.residual then
+				local depth, ancestryError = parentDepth(entry.node, true)
+				if depth == nil and not entry.published then
+					local ok, parent = pcall(function() return entry.node.Parent end)
+					if ok and parent == nil then depth = entry.depth end
+				end
+				if depth == nil then
+					if ancestryError == "ancestry_unreadable" then diagnostic(ancestryError)
+					else counts.transferred += 1 end
+				else
+					local ok, children = pcall(function() return entry.node:GetChildren() end)
+					if not ok then diagnostic("children_unreadable")
+					else
+						local limit = math.min(#children, 512 - inspectedChildren)
+						for n = 1, limit do
+							if not owned[children[n]] then counts.foreignRoots += 1 end
+						end
+						inspectedChildren += limit
+						if limit < #children then counts.foreignTruncated = true end
+						-- GetChildren materializes a native list; only inspection of that list is bounded.
+						if #children == 0 then
+							local destroyed = pcall(function() entry.node:Destroy() end)
+							if destroyed then
+								if entry.residual then counts.residualFailedCreates -= 1 else counts.active -= 1 end
+								entry.active = false
+								entry.residual = false
+								owned[entry.node] = nil
+								counts.destroyed += 1
+							else diagnostic("destroy_failed") end
+						end
+					end
+				end
+			end
+		end
+		counts.retainedOwned = counts.active + counts.residualFailedCreates
+		return self:summary()
+	end
+	return context, nil
+end
+
+-- Included in the exact generated validator, never loaded into shared globals.
+local function setupOwnedWorkload(work, native, register, createRaw, config)
+    work.data={accepted=false,coverage='reviewed_factory_workload_only',ordinaryLocalScriptEquivalence=false,visualPerception=false}
+    work.contexts={}
+    local a,b,c,ga,gb,ia,ib
+    work.close=function()
+        if work.renderConnection then work.renderConnection:Disconnect();work.renderConnection=nil end
+        local extras={created=0,destroyed=0,retainedOwned=0}
+        local summaries={}
+        for _,group in ipairs(work.contexts) do
+            local s=group.context:close()
+            if group==a and ib and gb then
+                work.data.otherContextPreserved=ib.Parent==gb and gb.Parent==native
+                local rejected,error=a.context:create('Frame',{})
+                work.data.closedCreationRefused=rejected==nil and error.code=='context_closed'
+            end
+            if s.active==0 and s.residualFailedCreates==0 then
+                for _,entry in ipairs(group.nodes) do entry.cleaned=true end
+            end
+            local extra=s.created-#group.nodes
+            extras.created+=extra
+            extras.retainedOwned+=s.residualFailedCreates
+            extras.destroyed+=math.max(0,extra-s.residualFailedCreates)
+            table.insert(summaries,s)
+        end
+        work.data.contextSummaries=summaries
+        return extras
+    end
+    local function context(id)
+        local c,e=createOwnedUiContext({enabled=true,runId=id,generation='controlled-workload',maxResources=16,maxDepth=8,
+            backend={root=native,isCurrent=function() return config.guard()==true end}})
+        assert(c,e and e.code)
+        local group={context=c,nodes={}}
+        table.insert(work.contexts,group)
+        return group
+    end
+    local function make(group,class,properties,parent)
+        local node,e=group.context:create(class,properties,parent)
+        assert(node,e and e.code)
+        local entry=register(node,parent or native)
+        table.insert(group.nodes,entry)
+        return node
+    end
+    a,b,c=context('factory-A'),context('factory-B'),context('factory-contamination')
+    ga=make(a,'ScreenGui',{Name='RiftControlledFactoryA',Enabled=true,ResetOnSpawn=false})
+    ia=make(a,'ImageLabel',{Name='FactoryImageA',Image=config.candidateContentId,Size=UDim2.fromOffset(120,120),Position=UDim2.fromOffset(24,100)},ga)
+    gb=make(b,'ScreenGui',{Name='RiftControlledFactoryB',Enabled=true,ResetOnSpawn=false})
+    ib=make(b,'ImageLabel',{Name='FactoryImageB',Image=config.candidateContentId,Size=UDim2.fromOffset(120,120),Position=UDim2.fromOffset(160,100)},gb)
+    local gc=make(c,'ScreenGui',{Name='RiftControlledContamination',Enabled=false,ResetOnSpawn=false})
+    local foreign=createRaw('Frame',{Name='ValidatorOwnedOutsideContext'},gc)
+    local closed=c.context:close()
+    work.data.foreignPreserved=foreign.Parent==gc and closed.retainedOwned==1 and closed.foreignRoots==1
+    local again=c.context:close()
+    work.data.closeIdempotent=again.retainedOwned==closed.retainedOwned and again.destroyed==closed.destroyed
+    assert(work.data.foreignPreserved and work.data.closeIdempotent,'foreign-safe close failed')
+    work.primary,work.secondary=ia,ib
+    work.run=function()
+        local completed,errors=0,{}
+        local steps=0
+        local signal=game:GetService('RunService').RenderStepped
+        local connection=signal:Connect(function() steps+=1 end)
+        work.renderConnection=connection
+        local frameA,frameB
+        local function nested(group,parent)
+            return make(group,'Frame',{Name='NestedDeferred',Size=UDim2.fromOffset(8,8)},parent)
+        end
+        task.spawn(function()
+            task.wait()
+            local ok,result=pcall(nested,a,ga)
+            if ok then frameA=result else table.insert(errors,tostring(result)) end
+            completed+=1
+        end)
+        task.spawn(function()
+            task.wait()
+            local ok,result=pcall(nested,b,gb)
+            if ok then frameB=result else table.insert(errors,tostring(result)) end
+            completed+=1
+        end)
+        local untilTime=os.clock()+2
+        while (completed<2 or steps<3) and os.clock()<untilTime and config.guard() do task.wait(0.03) end
+        connection:Disconnect();work.renderConnection=nil
+        work.data.deferredOwners=completed==2 and #errors==0
+        work.data.nestedOwners=frameA~=nil and frameB~=nil and frameA.Parent==ga and frameB.Parent==gb
+        work.data.renderSteps=steps
+        work.data.geometry=ia.AbsoluteSize.X>0 and ia.AbsoluteSize.Y>0 and ib.AbsoluteSize.X>0 and ib.AbsoluteSize.Y>0
+        assert(work.data.deferredOwners and work.data.nestedOwners,'deferred factory creation failed')
+        assert(steps>=3 and work.data.geometry,'render geometry is unverified')
+    end
+    work.snapshot=function()
+        work.data.imagesLoaded=ia.IsLoaded==true and ib.IsLoaded==true
+        return work.data
+    end
+    return work
+end
+
+-- Source-only draft. Dependencies are trusted constructor inputs, never RPC data.
+local function createOwnedUiRuntime(options)
+    local PROFILE = 'rift-owned-ui-v1'
+    local function reject(code) return nil, {code=code} end
+    local function plain(v) return type(v)=='table' and getmetatable(v)==nil end
+    local function text(v,n) return type(v)=='string' and #v>0 and #v<=n and not string.find(v,'%c') end
+    local function integer(v,n) return type(v)=='number' and v==v and v>=0 and v<=n and v==math.floor(v) end
+    local function validOptions(o)
+        return plain(o) and type(o.factory)=='function' and type(o.validate)=='function'
+            and type(o.current)=='function' and type(o.clock)=='function'
+            and text(o.factoryHash,128) and text(o.validatorHash,128)
+    end
+    if not validOptions(options) then return reject('invalid_options') end
+    local refs=table.clone(options)
+    local entries, history = {}, {}
+    local slots, seen, epoch = 0, 0, 0
+    local blockedReason=nil
+    local manager={}
+    local function now()
+        local ok,v=pcall(refs.clock)
+        if ok and type(v)=='number' and v==v and v>=0 and v<math.huge then return v end
+        return nil
+    end
+    local function identity()
+        local ok,v=pcall(refs.current)
+        if not ok or not plain(v) or not text(v.session,128) or not text(v.connectionId,128)
+            or not (text(v.generation,128) or integer(v.generation,9007199254740991)) or not text(v.readerBuild,128) then return nil end
+        return {session=v.session,connectionId=v.connectionId,generation=v.generation,readerBuild=v.readerBuild}
+    end
+    local function current(e)
+        if e.epoch~=epoch or e.revoked then return false end
+        local v=identity()
+        local k=e.identity
+        return v~=nil and v.session==k.session and v.connectionId==k.connectionId
+            and v.generation==k.generation and v.readerBuild==k.readerBuild
+    end
+    local function schema(a,prepare)
+        if not plain(a) then return false end
+        local allowed=prepare and {runId=true,nonce=true,profileId=true,factoryHash=true,validatorHash=true} or {runId=true,nonce=true}
+        local count=0
+        for k in pairs(a) do count+=1;if not allowed[k] then return false end end
+        return count==(prepare and 5 or 2) and text(a.runId,64) and text(a.nonce,128)
+            and (not prepare or (a.profileId==PROFILE and a.factoryHash==refs.factoryHash and a.validatorHash==refs.validatorHash))
+    end
+    local function summary(e)
+        local s={runId=e.runId,scope='context_created_only',wholeScriptProtected=false,state=e.state,
+            sessionId=e.identity.session,connectionId=e.identity.connectionId,generation=e.identity.generation,
+            readerBuild=e.identity.readerBuild,current=current(e),
+            created=0,active=0,destroyed=0,retainedOwned=0,residualFailedCreates=0,unknownOwned=false}
+        if not e.context then return s end
+        local ok,v=pcall(e.context.summary,e.context)
+        if not ok or not plain(v) then s.unknownOwned=true;return s end
+        for _,k in ipairs({'created','active','destroyed','retainedOwned','residualFailedCreates'}) do
+            if not integer(v[k],1000000000) then s.unknownOwned=true else s[k]=v[k] end
+        end
+        if v.unknownOwned==true or s.destroyed>s.created then s.unknownOwned=true end
+        return s
+    end
+    local function empty(s)
+        return not s.unknownOwned and s.active==0 and s.retainedOwned==0 and s.residualFailedCreates==0 and s.created==s.destroyed
+    end
+    local function release(e,s)
+        if entries[e.runId]==e then entries[e.runId]=nil;slots-=1 end
+        e.final=s;e.context=nil
+    end
+    local function revoke(e)
+        e.revoked=true
+        if e.context then pcall(e.context.revoke,e.context,'reader_runtime_revoked') end
+    end
+    local function prune()
+        local t=now()
+        if not t then return end
+        for _,e in pairs(entries) do
+            if not e.used and e.state~='preparing' and t>=e.expires then
+                revoke(e);e.state='expired'
+                local s=summary(e)
+                if empty(s) then release(e,s) end
+            end
+        end
+    end
+    local function validation(p)
+        if not plain(p) or p.status~='observed_exclusion' or p.profileId~=PROFILE
+            or not plain(p.workload) or p.workload.checksPassed~=true or not plain(p.cleanup) then return nil end
+        local c=p.cleanup
+        if not integer(c.created,1000000000) or c.created==0 or c.destroyed~=c.created
+            or c.retainedOwned~=0 or c.unknownOwned~=false or c.deferred~=false then return nil end
+        return {status='observed_exclusion',checksPassed=true,created=c.created,destroyed=c.destroyed,
+            retainedOwned=0,unknownOwned=false,deferred=false}
+    end
+    function manager:prepare(args)
+        if not schema(args,true) then return reject('invalid_prepare') end
+        if blockedReason then return reject('validation_blocked') end
+        prune()
+        if history[args.runId] then return reject('run_id_reused') end
+        if slots>=16 then return reject('context_limit') end
+        if seen>=256 then return reject('run_history_limit') end
+        local key,t=identity(),now()
+        if not key or not t then return reject('current_unavailable') end
+        -- Reserve across yields: concurrent prepares cannot oversubscribe or reuse IDs.
+        local e={runId=args.runId,nonce=args.nonce,identity=key,epoch=epoch,state='preparing',used=false,expires=t+30}
+        entries[e.runId]=e;history[e.runId]=e;slots+=1;seen+=1
+        local function abort(code)
+            e.state='refused';revoke(e)
+            if not e.context then release(e,summary(e)) end
+            return reject(code)
+        end
+        local function guard() return not blockedReason and entries[e.runId]==e and e.state=='preparing' and current(e) end
+        local ok,p,root=pcall(refs.validate,guard)
+        -- Unknown cleanup is a process-lifetime latch, even if identity changed
+        -- while validation yielded. Never retry an unaccounted native outcome.
+        if not ok then
+            blockedReason=blockedReason or 'validation_unknown_outcome'
+        else
+            local cleanup=plain(p) and p.cleanup or nil
+            if not plain(cleanup) or not integer(cleanup.created,1000000000)
+                or cleanup.destroyed~=cleanup.created or cleanup.retainedOwned~=0
+                or cleanup.unknownOwned~=false or cleanup.deferred~=false then
+                blockedReason=blockedReason or 'validation_cleanup_unresolved'
+            end
+        end
+        if blockedReason then return abort('validation_blocked') end
+        if not guard() then return abort('stale_generation') end
+        if not ok then return abort('validation_failed') end
+        local verified=validation(p)
+        if not verified or root==nil or (refs.rootInstance~=nil and root~=refs.rootInstance) then return abort('unverified_backend') end
+        -- Opaque short token is mapped to the captured full identity; no ambiguous concatenation.
+        local token='owned-ui-'..tostring(seen)
+        local made,c=pcall(refs.factory,{enabled=true,runId=e.runId,generation=token,
+            backend={root=root,isCurrent=function(generation) return generation==token and current(e) end}})
+        if not made or not plain(c) or type(c.create)~='function' or type(c.close)~='function'
+            or type(c.revoke)~='function' or type(c.summary)~='function' then return abort('context_failed') end
+        e.context=c
+        if not guard() then return abort('stale_generation') end
+        local preparedAt=now()
+        if not preparedAt then return abort('clock_failed') end
+        e.expires=preparedAt+30;e.state='prepared'
+        return {runId=e.runId,nonce=e.nonce,profileId=PROFILE,factoryHash=refs.factoryHash,
+            validatorHash=refs.validatorHash,readerBuild=key.readerBuild,scope='context_created_only',
+            wholeScriptProtected=false,validation=verified}
+    end
+    function manager:claim(args)
+        if not schema(args,false) then return reject('invalid_claim') end
+        prune()
+        local e=entries[args.runId]
+        if not e or e.nonce~=args.nonce then return reject('context_not_found') end
+        if e.used then return reject('already_claimed') end
+        if e.state~='prepared' or not current(e) then return reject('stale_generation') end
+        local t=now()
+        if not t or t>=e.expires then return reject('context_expired') end
+        e.used=true;e.state='claimed'
+        return e.context
+    end
+    function manager:close(args)
+        if not schema(args,false) then return reject('invalid_close') end
+        local e=history[args.runId]
+        if not e or e.nonce~=args.nonce then return reject('context_not_found') end
+        if e.final then return table.clone(e.final) end
+        revoke(e)
+        if e.state=='preparing' then return reject('prepare_pending') end
+        e.state='closed'
+        local ok=pcall(e.context.close,e.context)
+        if not ok then return reject('close_failed') end
+        local s=summary(e)
+        if s.unknownOwned then return reject('summary_failed') end
+        if empty(s) then release(e,s) end
+        return s
+    end
+    function manager:status()
+        prune()
+        local result={validationBlocked=blockedReason~=nil,blockedReason=blockedReason}
+        for _,e in pairs(entries) do table.insert(result,summary(e)) end
+        table.sort(result,function(a,b) return a.runId<b.runId end)
+        return result
+    end
+    -- Authenticated bridge-only recovery closes an exact historical ledger;
+    -- it never creates, claims, adopts a root or restores generation readiness.
+    function manager:closeRecorded(args)
+        if not plain(args) then return reject('invalid_recorded_close') end
+        local allowed={runId=true,sessionId=true,connectionId=true,generation=true,readerBuild=true}
+        local count=0;for key in pairs(args) do count+=1;if not allowed[key] then return reject('invalid_recorded_close') end end
+        if count~=5 or not text(args.runId,64) then return reject('invalid_recorded_close') end
+        local e=history[args.runId]
+        if not e or args.sessionId~=e.identity.session or args.connectionId~=e.identity.connectionId
+            or args.generation~=e.identity.generation or args.readerBuild~=e.identity.readerBuild then return reject('context_not_found') end
+        return self:close({runId=e.runId,nonce=e.nonce})
+    end
+    function manager:rebind(nextOptions)
+        if not validOptions(nextOptions) or nextOptions.factoryHash~=refs.factoryHash
+            or nextOptions.validatorHash~=refs.validatorHash then return reject('incompatible_rebind') end
+        epoch+=1
+        for _,e in pairs(entries) do revoke(e);if e.state~='preparing' and e.state~='closed' then e.state='revoked' end end
+        refs=table.clone(nextOptions)
+        return true
+    end
+    return manager
+end
+
+local function validateOwnedUi(guard)
+    local rawGetter=gethui
+    local root
+    local gethui=type(rawGetter)=='function' and function() root=rawGetter();return root end or nil
+    local socket,connectionId=state.socket,state.connectionId
+    local print=function(message)
+        if state.alive and state.authed and state.socket==socket and state.connectionId==connectionId then
+            pcall(function() socket:Send(HttpService:JSONEncode({v=1,type='log',level='info',producer='owned_ui_validation',message=string.sub(tostring(message),1,3500)})) end)
+        end
+    end
+    local suppliedConfig={ackControlledClient=true,controlContentId='rbxassetid://3926305904',candidateContentId='rbxassetid://3926307971',timeoutSeconds=15,guard=guard}
+    local function validate()
+-- MANUAL CONTROLLED WORKLOAD VALIDATION. No global hooks, adoption or replay.
+local config = suppliedConfig
+assert(type(config)=='table' and config.ackControlledClient==true and type(config.guard)=='function','Explicit controlled-workload approval and guard required')
+local function validId(id) return type(id)=='string' and string.match(id,'^rbxassetid://[1-9]%d*$')~=nil end
+assert(validId(config.controlContentId) and validId(config.candidateContentId) and config.controlContentId~=config.candidateContentId,'Two distinct canonical image identifiers required')
+local timeout=config.timeoutSeconds
+assert(type(timeout)=='number' and timeout==timeout and timeout>=1 and timeout<=15,'Budget must be1..15seconds')
+local deadline=os.clock()+timeout
+local originalGuard=config.guard
+local timedOut,done,started=false,false,false
+local phase='setup'
+config.guard=function() return not timedOut and os.clock()<deadline and originalGuard()==true end
+local entries,owned={},{}
+local work={}
+local http,native,core,provider
+local explicit,second,observer={callbacks=0},{callbacks=0},{callbacks=0}
+local result={status='inconclusive',liveProtectionVerified=false,ordinaryLocalScriptEquivalence=false,visualPerception=false,scope='reviewed_factory_workload_warm_executor_trace',nativeCalls=0}
+local function clipped(value) return string.sub(tostring(value),1,200) end
+local function report(value)
+    local ok,json=pcall(function() return http:JSONEncode(value) end)
+    print('[Rift Preload probe] '..(ok and json or tostring(value.reason)))
+    return value
+end
+local function check()
+    if timedOut or os.clock()>=deadline then error('probe_deadline_exceeded',0) end
+    if originalGuard()~=true then error('controlled_client_changed',0) end
+end
+local function register(node,parent,published)
+    local e={node=node,expectedParent=parent,published=published};table.insert(entries,e);owned[node]=e;return e
+end
+local function create(class,properties,parent)
+    check();assert(#entries<10,'controlled object limit exceeded')
+    local node=Instance.new(class);local e=register(node,parent,false)
+    check()
+    for key,value in pairs(properties) do check();node[key]=value end
+    check();node.Parent=parent;e.published=true;check();return node
+end
+local function ancestry(entry)
+    local current=entry
+    for _=1,16 do
+        local ok,parent=pcall(function() return current.node.Parent end)
+        if not ok then return false end
+        if parent==nil and not current.published then return true end
+        if parent~=current.expectedParent then return false end
+        current=owned[parent]
+        if not current then return parent==native or parent==core end
+    end
+    return false
+end
+local function cleanup()
+    phase='cleanup'
+    local extras={created=0,destroyed=0,retainedOwned=0}
+    local unknown=false
+    if work.close then
+        local ok,value=pcall(work.close)
+        if ok then extras=value else unknown=true;result.cleanupError=clipped(value) end
+    end
+    local summary={created=#entries+extras.created,destroyed=extras.destroyed,retainedOwned=extras.retainedOwned,foreignRoots=0,deferred=false,unknownOwned=unknown}
+    for i=#entries,1,-1 do
+        local entry=entries[i]
+        if not entry.cleaned then
+            local ok,children=pcall(function() return entry.node:GetChildren() end)
+            if ok then
+                for index,child in ipairs(children) do
+                    if index>64 then summary.unknownOwned=true;break end
+                    if not owned[child] then summary.foreignRoots+=1 end
+                end
+                if #children==0 and ancestry(entry) then entry.cleaned=pcall(function() entry.node:Destroy() end) end
+            end
+        end
+        if entry.cleaned then summary.destroyed+=1 else summary.retainedOwned+=1 end
+    end
+    return summary
+end
+local function identifier(value)
+    local text=tostring(value)
+    local digits=string.match(text,'^rbxassetid://(%d+)$') or string.match(text,'^https?://www%.roblox%.com/asset/%?id=(%d+)$')
+    return digits and string.gsub(digits,'^0+','') or text
+end
+local controlId,candidateId=identifier(config.controlContentId),identifier(config.candidateContentId)
+local function request(items,stage)
+    check();phase='native';result.nativeCalls+=1;assert(result.nativeCalls<=3,'native request limit exceeded')
+    local ok,err=pcall(function()
+        provider:PreloadAsync(items,function(content,status)
+            stage.callbacks+=1
+            if stage.callbacks>1024 then stage.limitReached=true;return end
+            local id,success=identifier(content),tostring(status)=='Enum.AssetFetchStatus.Success' or tostring(status)=='Success'
+            if id==controlId then stage.control=success;stage.controlSeen=true end
+            if id==candidateId then stage.candidate=success;stage.candidateSeen=true end
+        end)
+    end)
+    check()
+    if not ok then error('preload_failed: '..clipped(err),0) end
+    if stage.limitReached then error('callback_budget_exceeded',0) end
+end
+local function run()
+    check();if type(gethui)~='function' then error('native_backend_unavailable',0) end;native=gethui();check()
+    if typeof(native)~='Instance' or not native:IsA('BasePlayerGui') then error('native_backend_unavailable',0) end
+    core=game:GetService('CoreGui');check()
+    http=game:GetService('HttpService');check()
+    provider=game:GetService('ContentProvider');check()
+    local control=create('ScreenGui',{Name='RiftControlledWorkloadControl',Enabled=false,ResetOnSpawn=false},core)
+    local image=create('ImageLabel',{Image=config.controlContentId,Visible=false},control)
+    setupOwnedWorkload(work,native,function(node,parent) return register(node,parent,true) end,create,config)
+    check();work.run();check()
+    request({image,work.primary},explicit)
+    assert(explicit.control and explicit.candidate,'positive_control_failed')
+    request({work.secondary},second);work.data.secondImageControl=second.candidate==true
+    assert(second.candidate,'second_positive_control_failed')
+    check();local snapshot=work.snapshot();check()
+    assert(snapshot.imagesLoaded,'workload_images_unverified')
+    request({core},observer)
+end
+local function finish()
+    local ok,err=pcall(run)
+    if not ok then result.reason=clipped(err) end
+    local clean,summary=pcall(cleanup)
+    result.cleanup=clean and summary or {created=#entries,destroyed=0,retainedOwned=#entries,deferred=false,unknownOwned=true}
+    if not clean then result.cleanupError=clipped(summary) end
+    result.explicit,result.secondExplicit,result.observer=explicit,second,observer
+    result.workload=work.data or {accepted=false}
+    local d=result.workload
+    d.checksPassed=ok and d.nestedOwners==true and d.deferredOwners==true and d.foreignPreserved==true and d.closeIdempotent==true and d.otherContextPreserved==true and d.closedCreationRefused==true and d.geometry==true and d.imagesLoaded==true and d.secondImageControl==true and (d.renderSteps or 0)>=3
+    if ok and observer.control and not observer.candidateSeen and d.checksPassed and result.cleanup.retainedOwned==0 and not result.cleanup.unknownOwned then
+        result.status='observed_exclusion';result.reason='reviewed_workload_checks_passed_in_this_trace'
+    elseif ok then result.reason=observer.candidateSeen and 'candidate_observed' or 'workload_acceptance_incomplete' end
+    done=true
+    if timedOut then
+        result.status='inconclusive';result.phase=result.cleanup.retainedOwned==0 and not result.cleanup.unknownOwned and 'deferred_cleanup_complete' or 'deferred_cleanup_residual'
+        result.reason='worker_returned_after_timeout';report(result)
+    end
+end
+local scheduled,scheduleError=pcall(task.spawn,function() started=true;finish() end)
+if not scheduled and not done then
+    timedOut=true
+    return report({status='inconclusive',reason='scheduling_failed',error=clipped(scheduleError),liveProtectionVerified=false,cleanup={created=#entries,retainedOwned=#entries,deferred=started,unknownOwned=started}})
+end
+while not done and os.clock()<deadline do task.wait(0.03) end
+if not done then
+    timedOut=true
+    return report({status='inconclusive',reason='inflight_timeout',liveProtectionVerified=false,phase=phase,cleanup={created=#entries,destroyed=0,retainedOwned=#entries,deferred=true,unknownOwned=true},notice='Unknown outcome; this worker cannot be cancelled. No automatic retry. A late cleanup report is best-effort.'})
+end
+return report(result)
+
+    end
+    local proof=validate()
+    proof.profileId='rift-owned-ui-v1'
+    return proof,root
+end
+if CONFIG.allowExec and ownedUiEnvironmentAvailable then
+    local options={factory=createOwnedUiContext,validate=validateOwnedUi,factoryHash='20feeb857eb3f370aa5d4f4f5cb9441f583bbc2db45cb45b65d629a5ec5cbce1',validatorHash='9c4b3a1fda0d75ffee28d2709e8a5e7cbbe50b0fa98f29d732255ec9d7df9234',clock=os.clock,
+        current=function()
+            if not state.alive or not state.authed or genv[STATE_KEY]~=state then return nil end
+            return {session=state.session,connectionId=state.connectionId,generation=state.generation,readerBuild=CONFIG.readerBuild}
+        end}
+    if type(previous)=='table' and type(previous.ownedUiRuntime)=='table' and type(previous.ownedUiRuntime.rebind)=='function' then
+        local ok,bound=pcall(previous.ownedUiRuntime.rebind,previous.ownedUiRuntime,options)
+        if ok and bound==true then ownedUiRuntime=previous.ownedUiRuntime end
+    else ownedUiRuntime=createOwnedUiRuntime(options) end
+    state.ownedUiRuntime=ownedUiRuntime
+end
+local function ownedOperation(method,args)
+    if not CONFIG.allowExec or not ownedUiRuntime then fail('owned_ui_unavailable','Owned UI runtime is unavailable; nothing was executed') end
+    local value,problem=ownedUiRuntime[method](ownedUiRuntime,args)
+    if not value then fail(problem.code,'Owned UI operation refused: '..problem.code) end
+    return value
+end
+OPS.owned_ui_prepare=function(args) return ownedOperation('prepare',args) end
+OPS.owned_ui_close=function(args) return ownedOperation('close',args) end
+OPS.owned_ui_close_recorded=function(args) return ownedOperation('closeRecorded',args) end
+OPS.owned_ui_status=function()
+    local value=ownedOperation('status')
+    local contexts={};for _,context in ipairs(value) do table.insert(contexts,context) end
+    return {contexts=contexts,validationBlocked=value.validationBlocked,blockedReason=value.blockedReason}
+end
+
 OPS.exec = function(args)
 	if not CONFIG.allowExec then
 		fail(
@@ -1775,6 +2466,15 @@ OPS.exec = function(args)
 		fail("source_too_large", "source exceeds " .. CONFIG.execMaxSourceChars .. " chars")
 	end
 
+
+    local policy=args.policy
+    if policy~=nil then
+        local fields=0
+        if type(policy)~='table' or getmetatable(policy)~=nil then fail('invalid_owned_ui_policy','Invalid owned UI policy') end
+        for key in pairs(policy) do if key~='mode' and key~='nonce' and key~='profileId' then fail('invalid_owned_ui_policy','Unexpected policy field') end;fields+=1 end
+        if fields~=3 or policy.mode~='owned_ui_v1' or policy.profileId~='rift-owned-ui-v1' or type(policy.nonce)~='string' or not ownedUiEnvironmentAvailable then fail('invalid_owned_ui_policy','Unverified owned UI policy') end
+        if source~=OWNED_UI_EXAMPLE_SOURCE then fail('owned_ui_workload_unsupported','Only the exact reviewed factory workload is supported') end
+    end
 	-- Recorded before running so a duplicate request can never execute a second time.
 	state.execSeen[runId] = true
 	table.insert(state.execOrder, runId)
@@ -1792,6 +2492,7 @@ OPS.exec = function(args)
 		chunk, compileErr = nil, chunk
 	end
 	if chunk == nil then
+		if policy and ownedUiRuntime then ownedUiRuntime:close({runId=runId,nonce=policy.nonce}) end
 		return {
 			observedAt = nowIso(),
 			runId = runId,
@@ -1802,6 +2503,8 @@ OPS.exec = function(args)
 		}
 	end
 
+	local ownedContext
+    if policy then ownedContext=ownedOperation('claim',{runId=runId,nonce=policy.nonce}) end
 	local lines, outChars, truncated = {}, 0, false
 	local returned = false
 	local socket, connectionId, epoch = state.socket, state.connectionId, state.execOutputEpoch
@@ -1890,10 +2593,11 @@ OPS.exec = function(args)
 	local environment = "setfenv"
 	local okEnv = pcall(function()
 		assert(execOutputAvailable, "verified capture unavailable")
-		installExecCapture(chunk, capturePrint, captureWarn)
+		installExecCapture(chunk, capturePrint, captureWarn, ownedContext)
 	end)
 	captureEnabled = okEnv
 	if not okEnv then
+		if ownedContext then ownedUiRuntime:close({runId=runId,nonce=policy.nonce});fail("owned_ui_environment_failed","Private environment installation failed; source was not executed") end
 		environment = "no-capture"
 	end
 
@@ -1925,6 +2629,7 @@ OPS.exec = function(args)
 		compiled = true,
 		ok = packed[1] == true,
 		runtimeError = runtimeError,
+		ownedUi = ownedContext and ownedContext:summary() or nil,
 		output = table.concat(lines, "\n"),
 		outputTruncated = truncated,
 		returns = returns,

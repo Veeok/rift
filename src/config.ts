@@ -8,6 +8,7 @@ import { DEFAULT_PORT } from "./limits.js";
 export const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const DEFAULT_TOKEN_FILE = join(PACKAGE_ROOT, ".secrets", "token");
 export const DEFAULT_ENV_FILE = join(PACKAGE_ROOT, ".env");
+export const DEFAULT_PROTECTION_FILE = join(PACKAGE_ROOT, ".secrets", "extra-protection.json");
 
 export const TOKEN_PATTERN = /^[A-Za-z0-9_-]{32,256}$/;
 
@@ -18,6 +19,8 @@ export interface BridgeConfig {
 	tokenError: string | null;
 	logLevel: string | undefined;
 	allowExec: boolean;
+	/** Trusted constructor override for isolated tests, never an HTTP input. */
+	protectionFile?: string;
 }
 
 /** Opt-in client execution. Anything other than an explicit yes keeps it off. */

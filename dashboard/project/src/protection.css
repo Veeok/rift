@@ -1,0 +1,4 @@
+.protection-settings{margin-top:24px;padding-top:20px;border-top:1px solid var(--hairline)}
+.protection-settings h3{margin-top:0}
+.protection-settings fieldset{margin:0;padding:12px;border:1px solid var(--hairline);border-radius:var(--radius-sm);color:var(--muted)}
+.protection-settings .actions{display:flex;flex-wrap:wrap;gap:8px}

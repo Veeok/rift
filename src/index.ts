@@ -4,13 +4,14 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Bridge } from "./bridge.js";
-import { loadConfig } from "./config.js";
+import { loadConfig, DEFAULT_PROTECTION_FILE } from "./config.js";
 import { DecompileService } from "./decompile.js";
 import { ExecService } from "./exec.js";
 import { BRIDGE_NAME, BRIDGE_VERSION, DEFAULT_PORT } from "./limits.js";
 import { log, redirectConsoleToStderr, setLogLevel, addLogSecrets } from "./log.js";
 import { registerTools } from "./tools.js";
 import { serverInstructions } from "./instructions.js";
+import {ProtectionStore} from './protection-store.js';
 
 async function main(): Promise<void> {
 	redirectConsoleToStderr();
@@ -31,7 +32,7 @@ async function main(): Promise<void> {
 	bridge.start();
 
 	const decompiler = new DecompileService(bridge);
-	const exec = new ExecService(bridge, allowExec);
+	const exec = new ExecService(bridge, allowExec, new ProtectionStore(DEFAULT_PROTECTION_FILE));
 	if (allowExec) log.info("client execution enabled (VOLT_BRIDGE_ALLOW_EXEC)");
 	const server = new McpServer(
 		{ name: BRIDGE_NAME, version: BRIDGE_VERSION },

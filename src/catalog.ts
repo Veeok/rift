@@ -7,10 +7,11 @@ import type {DecompileService} from './decompile.js';
 import type {ExecService} from './exec.js';
 import {registerTools} from './tools.js';
 
-export interface CatalogTool {name:string;config:Record<string,unknown>;schema:z.ZodType;handler:(args:any)=>Promise<CallToolResult>}
+export interface ToolContext {signal?:AbortSignal}
+export interface CatalogTool {name:string;config:Record<string,unknown>;schema:z.ZodType;handler:(args:any,context?:ToolContext)=>Promise<CallToolResult>}
 export function createCatalog(bridge:Bridge,decompiler:DecompileService,exec:ExecService):Map<string,CatalogTool>{
 	const tools=new Map<string,CatalogTool>();
-	const registrar={registerTool(name:string,config:Record<string,unknown>,handler:(args:any)=>Promise<CallToolResult>){
+	const registrar={registerTool(name:string,config:Record<string,unknown>,handler:CatalogTool['handler']){
 		const schema=z.object(config.inputSchema as Record<string,z.ZodType>);
 		tools.set(name,{name,config,schema,handler});
 	}};

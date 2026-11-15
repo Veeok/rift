@@ -9,8 +9,8 @@ import type {CallToolResult} from '@modelcontextprotocol/sdk/types.js';
 import {Bridge} from './bridge.js';
 import {DecompileService,pageSource} from './decompile.js';
 import {ExecService} from './exec.js';
-import {PACKAGE_ROOT,type BridgeConfig} from './config.js';
-import {createCatalog,catalogJson,type CatalogTool} from './catalog.js';
+import {PACKAGE_ROOT,DEFAULT_PROTECTION_FILE,type BridgeConfig} from './config.js';
+import {createCatalog,catalogJson,type CatalogTool,type ToolContext} from './catalog.js';
 import {buildIdentity} from './build.js';
 import {ActivityStore} from './activity.js';
 import {SourceIndex,type SourceRecord} from './source-search.js';
@@ -20,6 +20,7 @@ import {LIMITS} from './limits.js';
 import {readScriptResult,budgetSourcePage} from './read-script-result.js';
 import {toolResult} from './tool-result.js';
 import {SourceDiscovery,sourceDiscoverySchema} from './source-discovery.js';
+import {ProtectionStore,protectionView} from './protection-store.js';
 
 export const API_VERSION=1;
 export const DEFAULT_API_PORT=38918;
@@ -44,7 +45,8 @@ export async function startService(config:BridgeConfig&{apiPort?:number;visual?:
 	addLogSecrets([secret]);
 	const identity=buildIdentity(),startedAt=new Date().toISOString();
 	const bridge=new Bridge(config.port,secret,config.tokenError);
-	const decompiler=new DecompileService(bridge),exec=new ExecService(bridge,config.allowExec);
+	const protection=new ProtectionStore(config.protectionFile??DEFAULT_PROTECTION_FILE);
+	const decompiler=new DecompileService(bridge),exec=new ExecService(bridge,config.allowExec,protection);
 	const catalog=createCatalog(bridge,decompiler,exec),activity=new ActivityStore({secrets:[secret]}),sourceIndex=new SourceIndex(redact);
 	let selectedId:string|null=null,lastBridgeId:string|null=null;
 	let visual:VisualApi|undefined=config.visual;
@@ -204,7 +206,7 @@ export async function startService(config:BridgeConfig&{apiPort?:number;visual?:
 	},'Read a bounded cached source excerpt with exact revision and lines. fetchMissing:true explicitly permits fetching only the selected script through existing decompile jobs; pending jobs remain pending.');
 	if(catalog.has('execute_luau')){
 		const tool=catalog.get('execute_luau')!,original=tool.handler;
-		tool.handler=async args=>{const id=requireSelected();if(id!==bridge.reader?.session)throw new Error('The selected session is not the connected Volt execution target. Select that exact session before confirming source.');return original(args);};
+		tool.handler=async(args,context)=>{const id=requireSelected();if(id!==bridge.reader?.session)throw new Error('The selected session is not the connected Volt execution target. Select that exact session before confirming source.');return original(args,context);};
 	}
 	const stopEvents=bridge.onReaderLog((event)=>{
 		sessions();const id=bridge.session;if(!id)return;
@@ -213,9 +215,9 @@ export async function startService(config:BridgeConfig&{apiPort?:number;visual?:
 		const details=provided?{producer:'exec_capture',sourceId:'exec:'+provided.runId,revision:provided.revision,readerTruncated:event.truncated===true,outputSourceVerification:'Explicit provided execution print/warn; native executor console is unverified'}:{outputSourceVerification:'native executor console is unverified'};
 		activity.append({sessionId:id,message:String(event.message??''),severity:String(event.level??'info'),source:provided?'provided_execution':'volt-reader',runId:provided?.runId,reliableRun:!!provided,attribution:event.producer==='exec_capture'?'unattributed':'session-wide',truncated:!!provided&&event.truncated===true,details});
 	});
-	async function call(name:string,args:unknown):Promise<CallToolResult>{
+	async function call(name:string,args:unknown,context?:ToolContext):Promise<CallToolResult>{
 		const tool=catalog.get(name);if(!tool)return toolResult({ok:false,error:{code:'unknown_tool',message:'Unknown or excluded operation.'}},{isError:true});
-		try{return redactValue(await tool.handler(tool.schema.parse(args??{})),redact);}
+		try{return redactValue(await tool.handler(tool.schema.parse(args??{}),context),redact);}
 		catch(e){const meta={ok:false,error:{code:e instanceof z.ZodError?'bad_args':'operation_failed',message:redact(e instanceof Error?e.message:'Operation failed')}};return name==='read_script'||name==='get_source_excerpt'?readScriptResult(meta,undefined,true):toolResult(meta,{isError:true});}
 	}
 	const origin=`http://127.0.0.1:${apiPort}`;
@@ -250,6 +252,13 @@ export async function startService(config:BridgeConfig&{apiPort?:number;visual?:
 				res.setHeader('set-cookie',`rift_session=${cookie}; HttpOnly; SameSite=Strict; Path=/api; Max-Age=28800`);return json(res,200,{ok:true});
 			}
 			if(!authenticated(req))return json(res,401,{error:'Authentication required. Run rift setup or unlock the local dashboard.'});
+			if(path==='/api/protection'&&req.method==='GET')return json(res,200,protectionView(await protection.snapshot(),await exec.refreshPreloadView()));
+			if(path==='/api/protection'&&req.method==='PATCH'){
+				if(req.headers.origin!==origin)return json(res,403,{error:'Preference writes require the exact local dashboard origin.'});
+				const input=z.strictObject({schemaVersion:z.literal(1),preload:z.boolean(),memory:z.literal(false),virtual:z.literal(false),unlocker:z.literal(false)}).parse(await body(req,1024));
+				const result=await protection.save(input);
+				return json(res,result.ok?200:500,result.ok?{...result,...protectionView({preferences:result.preferences,error:null},exec.preloadView())}:result);
+			}
 			if(path==='/api/status'&&req.method==='GET')return json(res,200,status());
 			if(path==='/api/doctor'&&req.method==='GET')return json(res,200,doctor());
 			if(path==='/api/catalog'&&req.method==='GET')return json(res,200,{apiVersion:API_VERSION,tools:catalogJson(catalog)});
@@ -259,8 +268,11 @@ export async function startService(config:BridgeConfig&{apiPort?:number;visual?:
 			}
 			if(path.startsWith('/api/tools/')&&req.method==='POST'){
 				const name=path.slice('/api/tools/'.length);
-				if(req.headers.origin && ['execute_luau','share_capture'].includes(name))return json(res,403,{error:'The dashboard is inspection/diagnostics only; image sharing requires an explicit MCP call.'});
-				return json(res,200,await call(name,await body(req)));
+				if(req.headers.origin && ['execute_luau','share_capture','close_owned_ui'].includes(name))return json(res,403,{error:'Execution, runtime-resource cleanup and sharing require an explicit MCP call.'});
+				const controller=new AbortController();
+				const closed=()=>{if(!res.writableEnded)controller.abort();};res.once('close',closed);
+				try{const result=await call(name,await body(req),{signal:controller.signal});if(!res.destroyed)return json(res,200,result);return;}
+				finally{res.removeListener('close',closed);}
 			}
 			json(res,404,{error:'Unknown route. No generic eval, mutation, remote firing or file access API.'});
 		}catch(e){json(res,e instanceof z.ZodError?400:(e as any).status??400,{error:redact(e instanceof z.ZodError?'Invalid request payload.':e instanceof Error?e.message:'Request failed.')});}

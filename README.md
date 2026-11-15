@@ -60,11 +60,11 @@ After reviewing the local preview for private information, explicitly call `shar
 
 ## Compatibility and execution boundary
 
-Reviewed M11 reader pin: `8e19dbe7338264a1e45eb1befac851a82fe00012`, build `224ebc6ae8c5`. All eight required updated-reader live checks passed for the observed Volt client; see `M11Inspection131126.md`. Earlier pin `dd4f905d4c026bf7cf45f1f5246ffc92da2d4dbb` remains immutable; historical pin `b18ac609754e3f690bd13ded367cfac06caf226f` does not include `exec_output_v1`. `/volt` and `VOLT_BRIDGE_*` remain compatibility identities; Volt is the external executor, not the product name. Other executors are not a compatibility claim.
+Current M11.5 reader build: `a636bab76535`. The loader pin is updated in the publication follow-up after the reader commit exists. Final matching-client protected-example acceptance is pending; see `docs/ScopedUi.md`. Historical M11 pin `8e19dbe7338264a1e45eb1befac851a82fe00012`, build `224ebc6ae8c5`, passed eight live checks for that observed revision only. Earlier pins remain immutable. `/volt` and `VOLT_BRIDGE_*` remain compatibility identities; Volt is the external executor, not the product name. Other executors are not a compatibility claim.
 
 The six bounded legacy tools remain: `get_status`, `list_children`, `search_instances`, `inspect_instance`, `list_scripts`, `read_script`. Modules are never required for inspection; no generic remote-firing/hook/property-write API is added.
 
-The shared service adds `get_sessions`, `select_session` (changes the selected session), `get_logs`, `search_source`, `list_windows`, `preview_capture` and `share_capture` (returns typed MCP image content from a reviewed preview only after `confirm:true`). M11 adds `get_subtree`, `inspect_instances`, `discover_source` and `get_source_excerpt`: 17 shared tools by default, or 18 with opt-in execution. The standalone registration has eight read tools plus opt-in execution; source discovery/excerpts require the shared service.
+The shared service adds `get_sessions`, `select_session` (changes the selected session), `get_logs`, `search_source`, `list_windows`, `preview_capture` and `share_capture` (returns typed MCP image content from a reviewed preview only after `confirm:true`). M11 adds `get_subtree`, `inspect_instances`, `discover_source` and `get_source_excerpt`: 17 shared tools by default. Execution-enabled mode adds `execute_luau`, `get_owned_ui_example` and `close_owned_ui` for 20 shared tools. The standalone registration has eight read tools plus these three opt-in tools; source discovery/excerpts require the shared service.
 
 ### Compact inspection and available source (M11)
 
@@ -81,6 +81,16 @@ M11's live acceptance status is recorded in `M11Inspection131126.md`; implementa
 Verified private-environment capture advertises `exec_output_v1`; unsupported environments report no capture. Each run streams at most 100 data frames plus one truncation notice, at most 60000 UTF-8 bytes total and 4000 bytes per data frame. Known-token redaction precedes framing. Delayed callbacks share the same budget and stop emitting after socket/reader replacement; executed work itself is not cancelled or replayed. Only synchronous output belongs to the returned output snapshot.
 
 Both listeners bind only 127.0.0.1. APIs enforce credentials, Host/Origin, request bounds and redaction before diagnostic output. Localhost is not a hostile-machine security boundary: a compromised local process can access local secrets, and the legacy reader does not authenticate its server. Keep execution off by default.
+
+### Optional scoped UI placement (M11.5)
+
+The dashboard's **Extra protection** section saves a default-Off Preload request. Saving On is not evidence of protection. With On, unsupported source refuses before execution unless the exact run was separately approved with literal `allowUnprotected:true`; `confirm:true` alone never supplies that override.
+
+Only the byte-exact reviewed example from `get_owned_ui_example` may use the prepared private `RiftUI` factory. A fixed validator and current-reader nonce precede dispatch. Coverage is `context_created_only`, always `wholeScriptProtected:false`. No global hooks, ordinary-LocalScript equivalence, known-ID/history concealment or arbitrary unchanged-script protection is claimed. Unknown validation outcomes latch without automatic retries.
+
+Owned resources survive top-level return and result eviction. Explicit `close_owned_ui({runId,confirm:true})` closes only the recorded ledger, retaining foreign/transferred resources. Reader rebind revokes old creation while preserving exact cleanup references, including after host restart. Browser execution/cleanup remains forbidden. Memory, Virtual and Unlocker are unavailable.
+
+The served dashboard's readable React/Vite source is in `dashboard/project/`; its `npm run build:runtime` emits the four fixed service assets into `dashboard/`. Synthetic preview has a separate loopback origin and cannot execute a client. See `docs/ScopedUi.md` for exact evidence and limits.
 
 ## Migration and validation
 
