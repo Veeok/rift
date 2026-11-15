@@ -60,7 +60,7 @@ After reviewing the local preview for private information, explicitly call `shar
 
 ## Compatibility and execution boundary
 
-Current M11.5 reader build: `a636bab76535`. The loader pin is updated in the publication follow-up after the reader commit exists. Final matching-client protected-example acceptance is pending; see `docs/ScopedUi.md`. Historical M11 pin `8e19dbe7338264a1e45eb1befac851a82fe00012`, build `224ebc6ae8c5`, passed eight live checks for that observed revision only. Earlier pins remain immutable. `/volt` and `VOLT_BRIDGE_*` remain compatibility identities; Volt is the external executor, not the product name. Other executors are not a compatibility claim.
+Current M11.5 reader pin: `846e8cde997a70b545da35b65ae483fd8af1400c`, build `a636bab76535`. Final matching-client protected-example acceptance is pending; see `docs/ScopedUi.md`. Historical M11 pin `8e19dbe7338264a1e45eb1befac851a82fe00012`, build `224ebc6ae8c5`, passed eight live checks for that observed revision only. Earlier pins remain immutable. `/volt` and `VOLT_BRIDGE_*` remain compatibility identities; Volt is the external executor, not the product name. Other executors are not a compatibility claim.
 
 The six bounded legacy tools remain: `get_status`, `list_children`, `search_instances`, `inspect_instance`, `list_scripts`, `read_script`. Modules are never required for inspection; no generic remote-firing/hook/property-write API is added.
 
