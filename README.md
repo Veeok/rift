@@ -63,7 +63,7 @@ After reviewing the local preview for private information, explicitly call `shar
 
 ## Compatibility and execution boundary
 
-Current reader build: `c5fdc931fde3` (Dex-style explorer); `loader.example.luau` pins its commit. Live-game acceptance of the explorer and the final M11.5 protected-example check are pending; see `docs/Explorer.md` and `docs/ScopedUi.md`. Previous M11.5 reader pin `846e8cde997a70b545da35b65ae483fd8af1400c`, build `a636bab76535`. Historical M11 pin `8e19dbe7338264a1e45eb1befac851a82fe00012`, build `224ebc6ae8c5`, passed eight live checks for that observed revision only. Earlier pins remain immutable. `/volt` and `VOLT_BRIDGE_*` remain compatibility identities; Volt is the external executor, not the product name. Other executors are not a compatibility claim.
+Current reader pin: `5314494991ff8533ab1b2d5de2785111fffa3a4a`, build `c5fdc931fde3` (Dex-style explorer). Live-game acceptance of the explorer and the final M11.5 protected-example check are pending; see `docs/Explorer.md` and `docs/ScopedUi.md`. Previous M11.5 reader pin `846e8cde997a70b545da35b65ae483fd8af1400c`, build `a636bab76535`. Historical M11 pin `8e19dbe7338264a1e45eb1befac851a82fe00012`, build `224ebc6ae8c5`, passed eight live checks for that observed revision only. Earlier pins remain immutable. `/volt` and `VOLT_BRIDGE_*` remain compatibility identities; Volt is the external executor, not the product name. Other executors are not a compatibility claim.
 
 The six bounded legacy tools remain: `get_status`, `list_children`, `search_instances`, `inspect_instance`, `list_scripts`, `read_script`. Modules are never required for inspection; no generic remote-firing/hook/property-write API is added.
 
