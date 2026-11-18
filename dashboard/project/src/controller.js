@@ -4,6 +4,7 @@ import {createRequestScope} from './request-scope.js';
 import {validateEvidence,mergeLogNotice,sourceContinuation} from './evidence-state.js';
 import {createDiagnosticsView} from './diagnostics-view.js';
 import {startProtectionControls} from './protection-controls.js';
+import {startExplorer} from './explorer-controller.js';
 
 const activeControllers=new WeakMap();
 export function startDashboard({document=globalThis.document,window=globalThis.window,fetchImpl=globalThis.fetch}={}) {
@@ -67,6 +68,7 @@ export function startDashboard({document=globalThis.document,window=globalThis.w
   const protection=startProtectionControls({document,client,onUnauthorized:()=>{
     state.locked=true;invalidate();disconnected('Unlock to inspect the local service.','locked');$('unlock').hidden=false;
   }});
+  const explorer=startExplorer({document,window,client,onSource:item=>{history.replaceState(null,'','#source');navigate();void readSelectedSource({scriptId:item.id,line:1,path:item.path,revision:null});}});
   const text = (id, value) => { $(id).textContent = value == null ? 'Not reported' : String(value); };
   const pretty = value => JSON.stringify(value, null, 2) ?? 'Not reported';
   const stamp = value => value == null ? 'Not reported' : String(value);
@@ -92,6 +94,7 @@ export function startDashboard({document=globalThis.document,window=globalThis.w
   function invalidate() {
     const evidenceHadFocus = ['events', 'source-results', 'widget-results', 'share-panel'].some(id => $(id).contains(document.activeElement));
     scope.reset();
+    explorer.setBinding(null);
     state.session = null; state.identity = null; state.cursor = undefined; state.events.clear(); state.selected = null;
     state.sourceArgs = null; state.sourceCursor = null;state.sourceRead=null;state.logNotice=null;sourceNext.hidden=true;
     for (const id of ['events', 'event-facts', 'source-results', 'widget-results']) $(id).replaceChildren();
@@ -162,6 +165,7 @@ export function startDashboard({document=globalThis.document,window=globalThis.w
     const identity = usable ? `${session.id}/${session.connectionId ?? ''}` : null;
     if (state.identity !== identity) invalidate();
     state.session = usable ? session.id : null; state.identity = identity;
+    explorer.setBinding(usable?{readerSession:session.id,connectionId:session.connectionId}:null);
     text('overview-title', usable ? session.name || session.clientName || 'Current client' : 'No current client');
     text('health', status.state); text('connection-note', status.error ? errorText(status.error) : usable ? 'Connection freshness only; source, widgets and captures are separate evidence.' : 'Select or connect a client to inspect current evidence.');
     $('health').toggleAttribute('data-no-client',!usable);
@@ -258,9 +262,10 @@ export function startDashboard({document=globalThis.document,window=globalThis.w
     }
   }
   function navigate() {
-    const view = location.hash.slice(1).split('?')[0]; const active = ['activity', 'source', 'visuals', 'diagnostics'].includes(view) ? view : 'activity';
+    const view = location.hash.slice(1).split('?')[0]; const active = ['activity', 'source', 'explorer', 'visuals', 'diagnostics'].includes(view) ? view : 'activity';
     document.querySelectorAll('.view').forEach(section => { section.hidden = section.id !== active; });
     document.querySelectorAll('[data-view]').forEach(link => { if (link.dataset.view === active) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current'); });
+    if(active==='explorer')explorer.activate();else explorer.deactivate();
     if (active === 'activity') {
       $('severity').value = new URLSearchParams(location.hash.split('?')[1]).get('severity') === 'error' ? 'error' : 'all';
       renderEvents();
@@ -272,6 +277,7 @@ export function startDashboard({document=globalThis.document,window=globalThis.w
     for(const timer of copyTimers)clearTimeout(timer);for(const row of copyRows)row.remove();
     diagnosticsView.dispose();
     protection.dispose();
+    explorer.dispose();
   }
   activeControllers.set(document,dispose);
   listen(window,'hashchange', navigate); navigate();

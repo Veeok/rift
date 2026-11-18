@@ -1,6 +1,7 @@
 import React from 'react';
 import {IconSprite,SeaWaves,AirlockScene} from './Scenery.jsx';
 import Protection from './Protection.jsx';
+import Explorer from './Explorer.jsx';
 
 export function CommandBar(){return (
 <header className="commandbar">
@@ -11,6 +12,7 @@ export function CommandBar(){return (
       <nav aria-label="Inspection views" className="nav">
         <a href="#activity" data-view="activity"><svg className="od-icon" aria-hidden="true" focusable="false"><use href="#i-activity"/></svg>Activity</a>
         <a href="#source" data-view="source"><svg className="od-icon" aria-hidden="true" focusable="false"><use href="#i-code"/></svg>Source &amp; Widgets</a>
+        <a href="#explorer" data-view="explorer"><svg className="od-icon" aria-hidden="true" focusable="false"><use href="#i-layers"/></svg>Explorer</a>
         <a href="#visuals" data-view="visuals"><svg className="od-icon" aria-hidden="true" focusable="false"><use href="#i-eye"/></svg>Visuals</a>
         <a href="#diagnostics" data-view="diagnostics"><svg className="od-icon" aria-hidden="true" focusable="false"><use href="#i-gauge"/></svg>Diagnostics</a>
       </nav>
@@ -243,6 +245,7 @@ export default function Dashboard(){return (<>
     <p id="global-error" className="warning" role="alert" hidden />
     <Activity />
     <Source />
+    <Explorer />
     <Visuals />
     <Diagnostics />
   </main>

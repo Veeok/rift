@@ -26,6 +26,7 @@ local CONFIG = {
 	registryCap = 25000,
 	-- Opt-in client execution (M2). Off unless explicitly enabled; see the resolution below.
 	allowExec = false,
+	allowExplorerWrite = false,
 	execMaxSourceChars = 100000,
 	execMaxOutputChars = 60000,
 	execMaxReturns = 20,
@@ -65,6 +66,7 @@ do
 		opt = root.VoltBridgeAllowExec
 	end
 	CONFIG.allowExec = opt == true
+	CONFIG.allowExplorerWrite = CONFIG.allowExec and type(runtimeConfig)=="table" and runtimeConfig.allowExplorerWrite==true
 end
 
 local HttpService = game:GetService("HttpService")
@@ -698,6 +700,7 @@ end
 local execOutputAvailable = false
 local ownedUiEnvironmentAvailable = false
 local ownedUiRuntime
+local explorerRuntime
 if CONFIG.allowExec then
 	local ok, supported = pcall(function()
 		local probe = assert(loadstring("return print, warn, RiftUI", "=rift-capture-check"))
@@ -713,6 +716,7 @@ end
 
 local function capabilities()
 	local caps = { "inspection_v1" }
+	if explorerRuntime then table.insert(caps,"explorer_v1");if CONFIG.allowExplorerWrite then table.insert(caps,"explorer_write_v1") end end
 	for _, k in ipairs({
 		"WebSocket",
 		"getscripts",
@@ -2442,6 +2446,362 @@ OPS.owned_ui_status=function()
     local contexts={};for _,context in ipairs(value) do table.insert(contexts,context) end
     return {contexts=contexts,validationBlocked=value.validationBlocked,blockedReason=value.blockedReason}
 end
+
+
+-- Fixed typed explorer operations. No eval, remote methods or hidden-property access.
+-- Fixed, versioned explorer surface. No engine instances are allocated here.
+local function createExplorerRuntime(options)
+ local root = options.root
+ local catalog = {}
+ local function add(class, category, names, kind, writable, min, max, enum)
+  for name in string.gmatch(names, '%S+') do
+   table.insert(catalog, {class=class,name=name,category=category,type=kind,writable=writable==true,min=min,max=max,enum=enum})
+  end
+ end
+ add('Instance','Identity','Name','string',true)
+ add('Instance','Identity','ClassName','string')
+ add('Instance','Identity','Parent','Instance')
+ add('GuiObject','Appearance','Visible','boolean',true)
+ add('GuiObject','Layout','Position Size','UDim2',true)
+ add('GuiObject','Layout','AnchorPoint','Vector2',true,-10000,10000)
+ add('GuiObject','Layout','Rotation','number',true,-36000,36000)
+ add('GuiObject','Layout','LayoutOrder ZIndex','number',true,-1000000,1000000)
+ add('GuiObject','Appearance','BackgroundColor3 BorderColor3','Color3',true,0,1)
+ add('GuiObject','Appearance','BackgroundTransparency','number',true,0,1)
+ add('GuiObject','Appearance','BorderSizePixel','number',true,0,10000)
+ add('LayerCollector','Behavior','Enabled ResetOnSpawn','boolean',true)
+ for _,class in ipairs({'TextLabel','TextButton','TextBox'}) do
+  add(class,'Text','Text','string',true)
+  add(class,'Text','TextColor3','Color3',true,0,1)
+  add(class,'Text','TextSize','number',true,1,1000)
+  add(class,'Text','TextTransparency','number',true,0,1)
+  add(class,'Text','TextWrapped RichText','boolean',true)
+  add(class,'Text','TextXAlignment','EnumItem',true,nil,nil,'TextXAlignment')
+  add(class,'Text','TextYAlignment','EnumItem',true,nil,nil,'TextYAlignment')
+  add(class,'Text','Font','EnumItem',true,nil,nil,'Font')
+ end
+ for _,class in ipairs({'ImageLabel','ImageButton'}) do
+  add(class,'Image','Image','string',true)
+  add(class,'Image','ImageColor3','Color3',true,0,1)
+  add(class,'Image','ImageTransparency','number',true,0,1)
+ end
+ add('BasePart','Appearance','Color','Color3',true,0,1)
+ add('BasePart','Appearance','Transparency Reflectance LocalTransparencyModifier','number',true,0,1)
+ add('BasePart','Appearance','Material','EnumItem',true,nil,nil,'Material')
+ add('BasePart','Physics','Position Size','Vector3')
+ add('BasePart','Physics','CFrame','unsupported')
+ add('BasePart','Physics','Anchored CanCollide','boolean')
+ add('Camera','Camera','FieldOfView','number',true,1,120)
+ add('BoolValue','Value','Value','boolean',true)
+ add('StringValue','Value','Value','string',true)
+ add('NumberValue','Value','Value','number',true,-1e12,1e12)
+ add('IntValue','Value','Value','number',true,-2147483648,2147483647)
+ local enums = options.Enum or Enum
+ local constructors = {Color3=options.Color3 or Color3,Vector2=options.Vector2 or Vector2,Vector3=options.Vector3 or Vector3,UDim=options.UDim or UDim,UDim2=options.UDim2 or UDim2}
+ local function finite(n) return type(n)=='number' and n==n and math.abs(n)<math.huge end
+ local function plain(t) return type(t)=='table' and getmetatable(t)==nil end
+ local function shape(t, required, optional)
+  if not plain(t) then return false end
+  for k in pairs(t) do if not required[k] and not (optional and optional[k]) then return false end end
+  for k in pairs(required) do if t[k]==nil then return false end end
+  return true
+ end
+ local function str(s, min, max) return type(s)=='string' and #s>=min and #s<=max end
+ local function bindingValid(b) return shape(b,{readerSession=true,connectionId=true}) and str(b.readerSession,1,2000) and str(b.connectionId,1,2000) end
+ local function same(a,b)
+  if type(a)~=type(b) then return false end
+  if type(a)~='table' then return a==b end
+  for k,v in pairs(a) do if not same(v,b[k]) then return false end end
+  for k in pairs(b) do if a[k]==nil then return false end end
+  return true
+ end
+ local function copy(t)
+  if type(t)~='table' then return t end
+  local c={} for k,v in pairs(t) do c[k]=copy(v) end return c
+ end
+ local function err(code,message) return nil,{code=code,message=message} end
+ local function current(b)
+  local ok,v=pcall(options.current)
+  return ok and bindingValid(v) and same(v,b)
+ end
+ local function enabled() local ok,v=pcall(options.allowWrite) return ok and v==true end
+ local function attached(n)
+  if n==root then return true end
+  local ok,v=pcall(function() return n:IsDescendantOf(root) end)
+  return ok and v==true
+ end
+ local function resolve(t)
+  if not shape(t,{id=true}) or not str(t.id,1,2000) then return nil end
+  local ok,n=pcall(options.resolveId,t.id)
+  if ok and n and attached(n) then return n end
+  return nil
+ end
+ local function clean(s)
+  if type(s)~='string' then return '',true,false end
+  local v=options.redact(s)
+  if type(v)~='string' then error('invalid redactor') end
+  return string.sub(v,1,2000),v~=s,#v>2000
+ end
+ local function describe(n,childFlag)
+  local raw=options.describe(n)
+  if not str(raw.id,1,2000) then error('invalid instance id') end
+  local d={id=raw.id,name=clean(raw.name),className=clean(raw.className),path=clean(raw.path)}
+  if childFlag then d.hasChildren=#n:GetChildren()>0 end
+  return d
+ end
+ local arities={Color3=3,Vector2=2,Vector3=3,UDim=2,UDim2=4}
+ local function serialize(v)
+  local kind=typeof(v)
+  if v==nil then return {type='nil'},false,false end
+  if kind=='string' then local s,r,t=clean(v) return {type='string',value=s},r,t end
+  if kind=='boolean' or (kind=='number' and finite(v)) then return {type=kind,value=v},false,false end
+  local a
+  if kind=='Color3' then a={v.R,v.G,v.B}
+  elseif kind=='Vector2' then a={v.X,v.Y}
+  elseif kind=='Vector3' then a={v.X,v.Y,v.Z}
+  elseif kind=='UDim' then a={v.Scale,v.Offset}
+  elseif kind=='UDim2' then a={v.X.Scale,v.X.Offset,v.Y.Scale,v.Y.Offset}
+  elseif kind=='EnumItem' then return {type=kind,value={enum=string.gsub(tostring(v.EnumType),'^Enum%.',''),name=v.Name}},false,false
+  elseif kind=='Instance' then return {type=kind,value=describe(v,false)},false,false end
+  if a then for _,n in ipairs(a) do if not finite(n) then return {type='unsupported'},false,false end end return {type=kind,value=a},false,false end
+  return {type='unsupported'},false,false
+ end
+ local function enumItems(d)
+  if not d.enum or not enums then return {} end
+  local ok,items=pcall(function() return enums[d.enum]:GetEnumItems() end)
+  return if ok then items else {}
+ end
+ local function typed(t,d,attribute)
+  if not shape(t,{type=true},{value=true}) or type(t.type)~='string' then return false end
+  local k=t.type
+  if k=='nil' then return attribute and t.value==nil,nil end
+  if t.value==nil or (d and k~=d.type) then return false end
+  if attribute and not ({string=true,boolean=true,number=true,Color3=true,Vector2=true,Vector3=true})[k] then return false end
+  local v=t.value
+  if k=='string' then if not str(v,0,2000) then return false end local _,r,tr=clean(v) return not r and not tr,v end
+  if k=='boolean' then return type(v)=='boolean',v end
+  local min,max=if d then d.min else nil,if d then d.max else nil
+  min,max=min or -1e12,max or 1e12
+  local function number(n) return finite(n) and n>=min and n<=max end
+  if k=='number' then return number(v) and (not d or d.class~='IntValue' or v%1==0),v end
+  if arities[k] then
+   if not plain(v) then return false end
+   local count=0 for key,n in pairs(v) do if type(key)~='number' or key%1~=0 or key<1 or key>arities[k] or not number(n) then return false end count+=1 end
+   if count~=arities[k] then return false end
+   if k=='Color3' then for _,n in ipairs(v) do if n<0 or n>1 then return false end end end
+   local ctor=constructors[k] if not ctor then return false end
+   local ok,n=pcall(ctor.new,table.unpack(v)) return ok,n
+  end
+  if k=='EnumItem' and d and shape(v,{enum=true,name=true}) and v.enum==d.enum and str(v.name,1,100) then
+   for _,item in ipairs(enumItems(d)) do if item.Name==v.name then return true,item end end
+  end
+  return false
+ end
+ local function descriptors(n)
+  local out={} for _,d in ipairs(catalog) do if n:IsA(d.class) then table.insert(out,d) end end return out
+ end
+ local function row(d,n,writeEnabled)
+  local p={name=d.name,category=d.category,type=d.type,writable=writeEnabled and d.writable and n~=root or false,min=d.min,max=d.max}
+  if d.enum then p.options={} for _,v in ipairs(enumItems(d)) do table.insert(p.options,{enum=d.enum,name=v.Name}) end end
+  if n then
+   local ok,value=pcall(function() return n[d.name] end)
+   if ok then
+    p.value,p.redacted,p.truncated=serialize(value)
+    if p.redacted or p.truncated or p.value.type=='unsupported' then p.writable=false end
+   else p.error='unreadable' p.writable=false end
+  else p.className=d.class p.writable=writeEnabled and d.writable or false end
+  return p
+ end
+ -- JSON upper bound: control bytes escape to six bytes, quote/backslash to two;
+ -- non-ASCII bytes are charged three to cover \uXXXX (and surrogate pairs).
+ local function escaped(s)
+  local n=2
+  for i=1,#s do local b=string.byte(s,i) n+=if b<32 then 6 elseif b==34 or b==92 then 2 elseif b>=128 then 3 else 1 end
+  return n
+ end
+ local function size(v)
+  local t=type(v) if t=='string' then return escaped(v) elseif t~='table' then return 32 end
+  local n=2 for k,x in pairs(v) do n+=size(k)+size(x)+2 end return n
+ end
+ local function read(args)
+  if not shape(args,{binding=true,view=true},{target=true,offset=true,limit=true,query=true,className=true}) or not bindingValid(args.binding) then return err('invalid_arguments','Invalid read schema') end
+  if not ({roots=true,children=true,properties=true,schema=true,search=true})[args.view] then return err('invalid_arguments','Invalid view') end
+  local offset,limit=args.offset or 0,args.limit or 50
+  if not finite(offset) or offset%1~=0 or offset<0 or offset>10000 or not finite(limit) or limit%1~=0 or limit<1 or limit>100 then return err('invalid_arguments','Invalid paging') end
+  if args.view~='search' and (args.query~=nil or args.className~=nil) then return err('invalid_arguments','Search fields require search view') end
+  if (args.query~=nil and not str(args.query,0,2000)) or (args.className~=nil and not str(args.className,1,100)) then return err('invalid_arguments','Invalid search filter') end
+  if (args.view=='roots' or args.view=='schema') and args.target~=nil then return err('invalid_arguments','Unexpected target') end
+  if args.target~=nil and (not shape(args.target,{id=true}) or not str(args.target.id,1,2000)) then return err('invalid_arguments','Invalid target schema') end
+  args=copy(args)
+  if not current(args.binding) then return err('stale_binding','Reader identity changed') end
+  local target=args.target and resolve(args.target) or nil
+  if (args.target~=nil and not target) or ((args.view=='children' or args.view=='properties') and not target) then return err('invalid_target','Target is missing or detached') end
+  if not current(args.binding) then return err('stale_binding','Reader identity changed') end
+  local r={binding=copy(args.binding),view=args.view,schemaVersion=1,observedAt=options.nowIso(),items={},hasMore=false,partial=false,writeEnabled=enabled()}
+  if target then r.target=describe(target,false) end
+  local function omit(reason) r.partial=true r.omissions=r.omissions or {} if not table.find(r.omissions,reason) then table.insert(r.omissions,reason) end end
+  local budget=size(r)
+  if budget>36000 then return err('response_too_large','Target metadata exceeds response budget') end
+  local function push(list,v)
+   local cost=size(v)+40 if budget+cost>36000 then omit('response_budget') return false end
+   budget+=cost table.insert(list,v) return true
+  end
+  if args.view=='schema' then
+   r.properties={}
+   for _,d in ipairs(catalog) do if not push(r.properties,row(d,nil,r.writeEnabled)) then break end end
+  elseif args.view=='properties' then
+   r.properties={} r.attributes={} r.tags={}
+   for _,d in ipairs(descriptors(target)) do if not push(r.properties,row(d,target,r.writeEnabled)) then break end end
+   local ok,attrs=pcall(function() return target:GetAttributes() end)
+   if ok then
+    local names={} for name in pairs(attrs) do table.insert(names,name) end table.sort(names)
+    for i,name in ipairs(names) do
+     if i>64 then omit('attribute_limit') break end
+     local value,redacted,truncated=serialize(attrs[name])
+     local safeName,nr,nt=clean(name)
+     local valid=typed(value,nil,true)
+     if not push(r.attributes,{name=safeName,category='Attributes',type=value.type,value=value,redacted=redacted or nr,truncated=truncated or nt,writable=r.writeEnabled and target~=root and valid and not redacted and not truncated and not nr and not nt and #name<=100 and not string.find(name,'__',1,true)}) then break end
+    end
+   else omit('attributes_unreadable') end
+   local tagsOk,tags=pcall(function() return options.collectionService:GetTags(target) end)
+   if tagsOk then table.sort(tags) for i,tag in ipairs(tags) do if i>64 then omit('tag_limit') break end if not push(r.tags,clean(tag)) then break end end else omit('tags_unreadable') end
+  else
+   local queue=(target or root):GetChildren()
+   local index,visited,matched=1,0,0
+   while index<=#queue and visited<10000 do
+    if not current(args.binding) then return err('stale_binding','Reader identity changed') end
+    local n=queue[index] index+=1 visited+=1
+    if attached(n) then
+     local item=describe(n,true)
+     local matches=args.view~='search' or ((not args.query or string.find(string.lower(item.name),string.lower(args.query),1,true)) and (not args.className or item.className==args.className))
+     if matches then
+      matched+=1
+      if matched>offset then
+       if #r.items==limit then r.hasMore=true break end
+       if not push(r.items,item) then r.hasMore=true break end
+      end
+     end
+     if args.view=='search' then
+      for _,child in ipairs(n:GetChildren()) do
+       if #queue>=10000 then omit('visit_limit') break end
+       table.insert(queue,child)
+      end
+     end
+    end
+   end
+   if index<=#queue and visited>=10000 then omit('visit_limit') end
+   if r.hasMore then r.nextOffset=offset+#r.items end
+  end
+  r.writeEnabled=enabled()
+  if not r.writeEnabled then
+   for _,p in ipairs(r.properties or {}) do p.writable=false end
+   for _,p in ipairs(r.attributes or {}) do p.writable=false end
+  end
+  if not current(args.binding) then return err('stale_binding','Reader identity changed') end
+  if target and not attached(target) then return err('invalid_target','Target detached during read') end
+  return r
+ end
+ local history,count,times={},0,{}
+ local busy=false
+ local function write(args)
+  if not shape(args,{binding=true,requestId=true,target=true,field=true,expected=true,value=true,schemaVersion=true,confirm=true}) or not bindingValid(args.binding) or not str(args.requestId,8,64) or args.schemaVersion~=1 or args.confirm~=true
+   or not shape(args.target,{id=true}) or not str(args.target.id,1,2000) or not shape(args.field,{kind=true,name=true}) or not str(args.field.name,1,100) or string.find(args.field.name,'__',1,true)
+   or not (args.field.kind=='property' or args.field.kind=='attribute') then return err('invalid_arguments','Invalid write schema') end
+  -- Validate bounded typed shapes before recursive cloning/comparison, even for replay.
+  local function envelope(v)
+   if not shape(v,{type=true},{value=true}) or not str(v.type,1,20) then return false end
+   if v.type=='nil' then return v.value==nil end
+   if v.type=='string' then return str(v.value,0,2000) end
+   if v.type=='boolean' then return type(v.value)=='boolean' end
+   if v.type=='number' then return finite(v.value) end
+   if v.type=='EnumItem' then return shape(v.value,{enum=true,name=true}) and str(v.value.enum,1,100) and str(v.value.name,1,100) end
+   if not arities[v.type] or not plain(v.value) then return false end
+   local n=0 for k,x in pairs(v.value) do if not finite(k) or k%1~=0 or k<1 or k>arities[v.type] or not finite(x) then return false end n+=1 end return n==arities[v.type]
+  end
+  if not envelope(args.expected) or not envelope(args.value) then return err('invalid_arguments','Invalid typed value') end
+  args=copy(args)
+  local old=history[args.requestId]
+  if old then if not same(old.args,args) then return err('request_id_conflict','Request ID already used with different arguments') end return copy(old.receipt) end
+  if not current(args.binding) then return err('stale_binding','Reader identity changed') end
+  if not enabled() then return err('write_disabled','Explorer writes are disabled') end
+  local n=resolve(args.target)
+  if not n or n==root then return err('invalid_target','Target is detached or read-only') end
+  local d
+  local attribute=args.field.kind=='attribute'
+  if not attribute then for _,candidate in ipairs(descriptors(n)) do if candidate.name==args.field.name then d=candidate break end end if not d or not d.writable then return err('read_only','Property is not editable') end end
+  local valid,native=typed(args.value,d,attribute)
+  if not valid or not typed(args.expected,d,attribute) then return err('invalid_value','Invalid field value or expected value') end
+  if count>=256 then return err('history_full','Write history is full; no records were evicted') end
+  local now=options.clock()
+  local keep={} for _,t in ipairs(times) do if now-t<1 then table.insert(keep,t) end end times=keep
+  if #times>=8 then return err('rate_limited','At most eight writes per second') end
+  local function get() if attribute then return n:GetAttribute(args.field.name) else return n[args.field.name] end end
+  local before,redacted,truncated=serialize(get())
+  if redacted or truncated or before.type=='unsupported' then return err('read_only','Current value cannot safely participate in comparison') end
+  local receipt={binding=copy(args.binding),requestId=args.requestId,target=describe(n,false),field=copy(args.field),status='rejected',before=before,requested=copy(args.value),schemaVersion=1,observedAt=options.nowIso()}
+  if size(receipt)>36000 then return err('response_too_large','Write metadata exceeds receipt budget') end
+  local originalTarget=receipt.target
+  local function result()
+   if size(receipt)>38000 then receipt.actual=nil receipt.message='Receipt values bounded; refresh before any new edit' end
+   if size(receipt)>38000 then receipt.before=nil receipt.requested=nil end
+   if size(receipt)>38000 then receipt.target=originalTarget receipt.message='Updated target metadata exceeds budget; refresh the target' end
+   return copy(receipt)
+  end
+  local record={args=copy(args),receipt=receipt}
+  if not current(args.binding) or not attached(n) then return err('stale_binding','Reader identity or target changed') end
+  if not enabled() then return err('write_disabled','Explorer writes are disabled') end
+  count+=1 history[args.requestId]=record table.insert(times,now)
+  if not same(before,args.expected) then receipt.status='conflict' receipt.actual=copy(before) return result() end
+  -- From this point an exception is uncertain, never proof that assignment did not happen.
+  receipt.status='unknown_outcome'
+  local ok=pcall(function()
+   -- Re-check after callbacks that may yield, directly adjacent to assignment.
+   local latest,r,t=serialize(get())
+   if r or t or latest.type=='unsupported' then receipt.status='rejected' return end
+   if not same(latest,args.expected) then receipt.status='conflict' receipt.actual=latest return end
+   if not enabled() or not current(args.binding) or not attached(n) then receipt.status='rejected' return end
+   if attribute then n:SetAttribute(args.field.name,native) else n[args.field.name]=native end
+   if not enabled() or not current(args.binding) or not attached(n) then return end
+   local actual,r,t=serialize(get())
+   receipt.target=describe(n,false)
+   if not enabled() or not current(args.binding) or not attached(n) then return end
+   receipt.actual=actual
+   receipt.status=if not r and not t and same(actual,args.value) then 'applied' else 'applied_but_diverged'
+  end)
+  if not ok then receipt.status='unknown_outcome' receipt.message='Assignment or verification failed; do not retry automatically' end
+  return result()
+ end
+ local function guarded(fn,args)
+  if busy then return err('busy','Explorer operation already in progress') end
+  busy=true
+  local ok,a,b=pcall(fn,args)
+  busy=false
+  if not ok then return err('operation_failed','Explorer operation failed before a confirmed result') end
+  return a,b
+ end
+ return {read=function(args) return guarded(read,args) end,write=function(args) return guarded(write,args) end}
+end
+
+
+explorerRuntime=createExplorerRuntime({root=game,resolveId=lookupId,
+    describe=function(inst)
+        local segments,rooted=pathSegments(inst)
+        return {id=idFor(inst),name=redactExecText(safeName(inst)),className=safeClass(inst),path=redactExecText(pathString(segments,rooted))}
+    end,
+    current=function()
+        if not state.alive or not state.authed or genv[STATE_KEY]~=state then return nil end
+        return {readerSession=state.session,connectionId=state.connectionId}
+    end,
+    allowWrite=function() return CONFIG.allowExec and CONFIG.allowExplorerWrite end,
+    clock=os.clock,nowIso=nowIso,redact=redactExecText,collectionService=CollectionService})
+local function explorerOperation(method,args)
+    if not explorerRuntime then fail('explorer_unavailable','The typed explorer runtime is unavailable') end
+    local result,problem=explorerRuntime[method](args)
+    if not result then fail(problem and problem.code or 'explorer_refused',problem and problem.message or 'Explorer operation refused') end
+    return result
+end
+OPS.explorer_read=function(args) return explorerOperation('read',args) end
+OPS.explorer_write=function(args) return explorerOperation('write',args) end
 
 OPS.exec = function(args)
 	if not CONFIG.allowExec then

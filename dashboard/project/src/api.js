@@ -11,6 +11,7 @@ function methodFor(path,hasBody){
  if(['/api/status','/api/doctor'].includes(path)&&!hasBody)return 'GET';
  if(path==='/api/login'&&hasBody)return 'POST';
  if(path==='/api/protection')return hasBody?'PATCH':'GET';
+ if(['/api/explorer/read','/api/explorer/write'].includes(path)&&hasBody)return 'POST';
  const tool=path.match(/^\/api\/tools\/([a-z_]+)$/);
  if(tool&&hasBody&&allowedTools.has(tool[1]))return 'POST';
  const capture=path.match(/^\/api\/captures\/([A-Za-z0-9._%~-]+)$/);
@@ -75,6 +76,12 @@ export function createDashboardClient({fetchImpl=globalThis.fetch}={}){
    if(input!==undefined&&(!record(input)||Object.keys(input).length!==5||preferenceKeys.some(key=>!Object.hasOwn(input,key))
     ||input.schemaVersion!==1||preferenceKeys.slice(1).some(key=>typeof input[key]!=='boolean')))throw new TypeError('Invalid protection preferences.');
    return request('/api/protection',input,{signal});
+  },
+  async explorerRead(input,signal){return decodeToolResult(await request('/api/explorer/read',input,{signal}));},
+  async explorerWrite(input,signal){
+   const result=await request('/api/explorer/write',input,{signal});
+   if(result.structuredContent?.status==='unknown_outcome')return result.structuredContent;
+   return decodeToolResult(result);
   },
  });
 }

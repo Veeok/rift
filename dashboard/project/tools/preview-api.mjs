@@ -10,6 +10,7 @@ const scenarios=new Set(['healthy','locked','no_client','offline','stale','recon
 export function createPreviewApi(){
   let generation=1,scenario='healthy';
   let preferences={schemaVersion:1,preload:false,memory:false,virtual:false,unlocker:false};
+  let explorerText='Synthetic explorer label';const explorerEdits=new Map();
   const protection=()=>({preferences:{...preferences},error:null,runtime:{preload:{state:preferences.preload?'Unverified':'Off',support:'unverified',inUse:false}}});
   const auth=randomBytes(24).toString('hex');
   const cookies=req=>(req.headers.cookie??'').split(';').some(value=>value.trim()==='rift_preview='+auth);
@@ -47,7 +48,7 @@ export function createPreviewApi(){
   async function route(req,res,next){
     const path=req.url.split('?')[0];
     if(!path.startsWith('/api/'))return next();
-    const args=['POST','PATCH'].includes(req.method)?await body(req,path==='/api/protection'?1024:16384):{};
+     const args=['POST','PATCH'].includes(req.method)?await body(req,path==='/api/protection'?1024:path.startsWith('/api/explorer/')?8192:16384):{};
     if(path==='/api/preview/scenario'&&req.method==='POST'){
       if(!scenarios.has(args.scenario))return send(res,400,{error:'Unknown synthetic preview scenario.'});
       if(args.scenario==='reconnect')generation++;
@@ -59,7 +60,29 @@ export function createPreviewApi(){
       return send(res,200,{ok:true,synthetic:true},{'set-cookie':`rift_preview=${auth}; HttpOnly; SameSite=Strict; Path=/`});
     }
     if(scenario==='locked'&&!cookies(req))return send(res,401,{error:'Synthetic preview is locked. Dummy token: preview-only.'});
-    if(path==='/api/protection'&&req.method==='GET')return send(res,200,protection());
+     if(path==='/api/protection'&&req.method==='GET')return send(res,200,protection());
+     if(['/api/explorer/read','/api/explorer/write'].includes(path)&&req.method==='POST'){
+       const binding={readerSession:sessionId(),connectionId:`synthetic-connection-${generation}`};
+       if(args.binding?.readerSession!==binding.readerSession||args.binding?.connectionId!==binding.connectionId)return send(res,409,{error:'Synthetic explorer binding changed.'});
+       const root={id:'synthetic-root-'+generation,name:'Workspace',className:'Workspace',path:'game.Workspace',hasChildren:true};
+       const target={id:widgetId(),name:'SyntheticWidget',className:'TextLabel',path:'game.Workspace.SyntheticWidget',hasChildren:false};
+       const base={binding,schemaVersion:1,synthetic:true,writeEnabled:true,observedAt:'2026-11-15T00:00:00Z',items:[],hasMore:false,notice:'Synthetic design fixture only. No native client is contacted.'};
+       if(path.endsWith('/read')){
+         const value={...base,view:args.view};
+         if(args.view==='roots')value.items=[root];
+         else if(args.view==='children'&&args.target?.id===root.id)value.items=[target];
+         else if(args.view==='search')value.items=target.name.toLowerCase().includes(String(args.query??'').toLowerCase())?[target]:[];
+         else if(args.view==='properties'&&args.target?.id===target.id)Object.assign(value,{target,properties:[{name:'Name',type:'string',category:'Identity',writable:false,value:{type:'string',value:target.name}},{name:'Text',type:'string',category:'Text',writable:true,value:{type:'string',value:explorerText}}],attributes:[],tags:['Synthetic']});
+         else return send(res,400,{error:'Unsupported synthetic explorer request.'});
+         return send(res,200,{structuredContent:value});
+       }
+       if(args.confirm!==true||args.schemaVersion!==1||typeof args.requestId!=='string'||args.requestId.length<8||args.requestId.length>64||args.target?.id!==target.id||args.field?.kind!=='property'||args.field?.name!=='Text'||args.expected?.type!=='string'||args.value?.type!=='string'||typeof args.value.value!=='string'||args.value.value.length>2000)return send(res,400,{error:'Unsupported synthetic edit. Only the fixture Text property is editable.'});
+       const fingerprint=JSON.stringify(args),prior=explorerEdits.get(args.requestId);
+       if(prior){if(prior.fingerprint!==fingerprint)return send(res,409,{error:'Synthetic request ID was reused with different content.'});return send(res,200,{structuredContent:prior.receipt});}
+       if(explorerEdits.size>=256)return send(res,429,{error:'Synthetic edit history is full. Restart this preview.'});
+       const status=args.expected.value===explorerText?'applied':'conflict';if(status==='applied')explorerText=args.value.value;
+       const receipt={...base,requestId:args.requestId,status,actual:{type:'string',value:explorerText}};explorerEdits.set(args.requestId,{fingerprint,receipt});return send(res,200,{structuredContent:receipt});
+     }
     if(path==='/api/protection'&&req.method==='PATCH'){
       if(Object.keys(args).length!==5||args.schemaVersion!==1||typeof args.preload!=='boolean'||args.memory!==false||args.virtual!==false||args.unlocker!==false)return send(res,400,{error:'Invalid protection preferences.'});
       preferences={...args};return send(res,200,{ok:true,preferences:{...preferences}});

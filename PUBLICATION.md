@@ -2,7 +2,7 @@
 
 Explicit local Rift source export only: no parent repository/history, credentials, raw logs, screenshots or reconstructed game source. Nothing is committed or published by generation.
 
-Current reader template build:a636bab76535. M11.5 adds optional scoped owned-resource placement, saved controls and fail-closed admission. A finite factory-mechanism observation succeeded; final matching-client protected-example acceptance is pending. See `docs/ScopedUi.md`. Historical report statuses/pins remain immutable observations of their recorded revisions, not new compatibility passes.
+Current reader template build: c5fdc931fde3 adds the Dex-style explorer (see `docs/Explorer.md`); live-game explorer acceptance is pending. Previous build a636bab76535: M11.5 adds optional scoped owned-resource placement, saved controls and fail-closed admission. A finite factory-mechanism observation succeeded; final matching-client protected-example acceptance is pending. See `docs/ScopedUi.md`. Historical report statuses/pins remain immutable observations of their recorded revisions, not new compatibility passes.
 
 Immutable M11.5 reader commit:`846e8cde997a70b545da35b65ae483fd8af1400c`; `loader.example.luau` pins this revision with a local-token placeholder only.
 

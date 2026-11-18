@@ -208,6 +208,18 @@ export async function startService(config:BridgeConfig&{apiPort?:number;visual?:
 		const tool=catalog.get('execute_luau')!,original=tool.handler;
 		tool.handler=async(args,context)=>{const id=requireSelected();if(id!==bridge.reader?.session)throw new Error('The selected session is not the connected Volt execution target. Select that exact session before confirming source.');return original(args,context);};
 	}
+	for(const name of ['explorer_read','explorer_write']){
+		const tool=catalog.get(name);if(!tool)continue;const original=tool.handler;
+		tool.handler=async(args,context)=>{
+			const id=requireSelected();if(id!==args.binding.readerSession||id!==bridge.reader?.session)throw new Error('Explorer operation must match the selected connected reader.');
+			const result=await original(args,context);
+			if(name==='explorer_write'&&id===bridge.reader?.session){
+				const receipt=result.structuredContent as any;
+				try{activity.append({sessionId:id,source:'explorer_edit',attribution:'session-wide',message:'Explorer edit '+(receipt?.status??'refused'),severity:receipt?.status==='applied'?'info':'warn',details:{requestId:args.requestId,target:args.target,field:args.field,status:receipt?.status??'refused',binding:args.binding}});}catch{/* Audit failure must not replace a possibly applied edit receipt. */}
+			}
+			return result;
+		};
+	}
 	const stopEvents=bridge.onReaderLog((event)=>{
 		sessions();const id=bridge.session;if(!id)return;
 		const reader=bridge.reader,provided=reader?.capabilities.includes('exec_output_v1')&&event.producer==='exec_capture'&&typeof event.runId==='string'
@@ -262,13 +274,23 @@ export async function startService(config:BridgeConfig&{apiPort?:number;visual?:
 			if(path==='/api/status'&&req.method==='GET')return json(res,200,status());
 			if(path==='/api/doctor'&&req.method==='GET')return json(res,200,doctor());
 			if(path==='/api/catalog'&&req.method==='GET')return json(res,200,{apiVersion:API_VERSION,tools:catalogJson(catalog)});
+			if(['/api/explorer/read','/api/explorer/write'].includes(path)&&req.method==='POST'){
+				const write=path.endsWith('/write');
+				if(write&&req.headers.origin!==origin)return json(res,403,{error:'Explorer edits require the exact dashboard origin.'});
+				const input=await body(req,8192) as any;
+				const selected=requireSelected();
+				if(input?.binding?.readerSession!==selected)return json(res,409,{error:'Explorer binding does not match the selected session. Refresh before editing.'});
+				const controller=new AbortController(),closed=()=>{if(!res.writableEnded)controller.abort();};res.once('close',closed);
+				try{const result=await call(write?'explorer_write':'explorer_read',input,{signal:controller.signal});if(!res.destroyed)return json(res,200,result);return;}
+				finally{res.removeListener('close',closed);}
+			}
 			if(path.startsWith('/api/captures/')&&req.method==='GET'){
 				const image=(await visuals()).image(decodeURIComponent(path.slice('/api/captures/'.length)));
 				res.writeHead(200,{...headers,'content-type':image.mimeType});res.end(image.data);return;
 			}
 			if(path.startsWith('/api/tools/')&&req.method==='POST'){
 				const name=path.slice('/api/tools/'.length);
-				if(req.headers.origin && ['execute_luau','share_capture','close_owned_ui'].includes(name))return json(res,403,{error:'Execution, runtime-resource cleanup and sharing require an explicit MCP call.'});
+				if(req.headers.origin && ['execute_luau','share_capture','close_owned_ui','explorer_write'].includes(name))return json(res,403,{error:'Execution, runtime cleanup and sharing require MCP; explorer edits use their fixed confirmation route.'});
 				const controller=new AbortController();
 				const closed=()=>{if(!res.writableEnded)controller.abort();};res.once('close',closed);
 				try{const result=await call(name,await body(req),{signal:controller.signal});if(!res.destroyed)return json(res,200,result);return;}

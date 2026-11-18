@@ -12,7 +12,7 @@ export interface CatalogTool {name:string;config:Record<string,unknown>;schema:z
 export function createCatalog(bridge:Bridge,decompiler:DecompileService,exec:ExecService):Map<string,CatalogTool>{
 	const tools=new Map<string,CatalogTool>();
 	const registrar={registerTool(name:string,config:Record<string,unknown>,handler:CatalogTool['handler']){
-		const schema=z.object(config.inputSchema as Record<string,z.ZodType>);
+		const schema=name.startsWith('explorer_')?z.strictObject(config.inputSchema as Record<string,z.ZodType>):z.object(config.inputSchema as Record<string,z.ZodType>);
 		tools.set(name,{name,config,schema,handler});
 	}};
 	registerTools(registrar as unknown as McpServer,bridge,decompiler,exec);

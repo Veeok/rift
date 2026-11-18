@@ -40,7 +40,8 @@ test('catalog annotations match tool behaviour',async()=>{
     const apiPort=await port(),service=await startService({port:await port(),apiPort,token,tokenFile:'unused',tokenError:null,allowExec});
     try{
       const response=await fetch(`http://127.0.0.1:${apiPort}/api/catalog`,{headers:{authorization:'Bearer '+token}});assert.equal(response.status,200);
-      const {tools}=await response.json(),byName=new Map(tools.map(tool=>[tool.name,tool]));assert.equal(tools.length,allowExec?20:17);assert.equal(byName.has('execute_luau'),allowExec);
+      const {tools}=await response.json(),byName=new Map(tools.map(tool=>[tool.name,tool]));assert.equal(tools.length,allowExec?22:18);assert.equal(byName.has('execute_luau'),allowExec);
+      assert.equal(byName.get('explorer_read').annotations.readOnlyHint,true);assert.equal(byName.has('explorer_write'),allowExec);if(allowExec){assert.equal(byName.get('explorer_write').annotations.readOnlyHint,false);assert.equal(byName.get('explorer_write').annotations.destructiveHint,true);}
       for(const name of ['get_owned_ui_example','close_owned_ui'])assert.equal(byName.has(name),allowExec,name);
       if(allowExec){assert.equal(byName.get('get_owned_ui_example').annotations.readOnlyHint,true);assert.equal(byName.get('close_owned_ui').annotations.readOnlyHint,false);assert.equal(byName.get('close_owned_ui').annotations.destructiveHint,true);assert.equal(byName.get('close_owned_ui').annotations.idempotentHint,true);}
       assert.equal(byName.get('select_session').annotations.readOnlyHint,false);assert.equal(byName.get('select_session').annotations.idempotentHint,true);
