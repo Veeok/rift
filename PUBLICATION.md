@@ -1,5 +1,7 @@
 # Publication boundary
 
+Reader-only update, 20 Nov 2026: template build `f245419cbc44` is published for the matching local Rift service. The public reader keeps the token placeholder and reads credentials only from local configuration. This does not update the public host or dashboard. Offline reader-output, inspection, and source-contract checks passed 35/35; this is not live Preload acceptance or a claim that Stop cleans up every resource.
+
 Explicit local Rift source export only: no parent repository/history, credentials, raw logs, screenshots or reconstructed game source. Nothing is committed or published by generation.
 
 Current reader template build: c5fdc931fde3 adds the Dex-style explorer (see `docs/Explorer.md`); live-game explorer acceptance is pending. Previous build a636bab76535: M11.5 adds optional scoped owned-resource placement, saved controls and fail-closed admission. A finite factory-mechanism observation succeeded; final matching-client protected-example acceptance is pending. See `docs/ScopedUi.md`. Historical report statuses/pins remain immutable observations of their recorded revisions, not new compatibility passes.

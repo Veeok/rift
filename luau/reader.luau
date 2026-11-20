@@ -9,7 +9,7 @@ local CONFIG = {
 	token = "__VOLT_BRIDGE_TOKEN__",
 	protocol = 1,
 	readerVersion = "0.1.0",
-	readerBuild = "c5fdc931fde3", -- sha256 prefix of this template, stamped by npm run setup
+	readerBuild = "f245419cbc44", -- sha256 prefix of this template, stamped by npm run setup
 	connectBackoff = { 1, 2, 5, 10, 20, 30 }, -- seconds between initial-connect attempts
 	giveUpAfterSeconds = 30 * 60, -- stop trying to connect after this long without a bridge
 	-- Unauthenticated this long on one socket => close it and open one new socket. Live test on Volt 1.3.21.2
@@ -122,6 +122,8 @@ local state = {
 	scriptCache = nil,
 	execSeen = {},
 	execOrder = {},
+	-- Dashboard-managed script runs survive a reader re-run so Stop can still clean them up.
+	scriptRuns = (type(previous) == "table" and type(previous.scriptRuns) == "table" and previous.scriptRuns) or {},
 }
 state.shortSession = string.sub(state.session, 1, 8)
 genv[STATE_KEY] = state
@@ -735,6 +737,7 @@ local function capabilities()
 	if CONFIG.allowExec then
 		table.insert(caps, "exec")
 		if ownedUiRuntime and ownedUiEnvironmentAvailable then table.insert(caps, "owned_ui_v1") end
+		if execOutputAvailable then table.insert(caps, "script_runtime_v1") end
 		if execOutputAvailable then
 			table.insert(caps, "exec_output_v1")
 		end
@@ -2803,6 +2806,156 @@ end
 OPS.explorer_read=function(args) return explorerOperation('read',args) end
 OPS.explorer_write=function(args) return explorerOperation('write',args) end
 
+---------------------------------------------------------------------------
+-- Tracked script runtime (script_runtime_v1), used only by dashboard Run/Stop.
+-- A tracked run gets a private environment whose Instance.new/fromExisting,
+-- task.spawn/defer/delay, coroutine.create/wrap, spawn and delay record what the
+-- script creates. Stop cancels those threads, disconnects connections whose
+-- callback belongs to this run (found through getconnections on a fixed list of
+-- common signals), and destroys the recorded instances that still exist.
+-- NOT tracked: instances made with :Clone(), by other code on the script's behalf,
+-- or through executor helpers; connections on signals outside that list; getgenv
+-- globals and hooks. Stop reports counts; it does not promise a perfect cleanup.
+---------------------------------------------------------------------------
+local SCRIPT_ID_PATTERN = "^[%w%._%-]+$"
+
+local function createScriptRun(scriptId, runId)
+	local run = {
+		scriptId = scriptId, runId = runId, status = "running", startedAt = nowIso(),
+		instances = {}, threads = {}, error = nil,
+	}
+	local realInstance, realTask, realCoroutine = Instance, task, coroutine
+	local function keepInstance(value)
+		if typeof(value) == "Instance" then table.insert(run.instances, value) end
+		return value
+	end
+	local function keepThread(value)
+		if type(value) == "thread" then table.insert(run.threads, value) end
+		return value
+	end
+	local trackedInstance = setmetatable({
+		new = function(className, parent) return keepInstance(realInstance.new(className, parent)) end,
+		fromExisting = function(existing) return keepInstance(realInstance.fromExisting(existing)) end,
+	}, { __index = function(_, key) return realInstance[key] end })
+	local trackedTask = setmetatable({
+		spawn = function(fn, ...) return keepThread(realTask.spawn(fn, ...)) end,
+		defer = function(fn, ...) return keepThread(realTask.defer(fn, ...)) end,
+		delay = function(seconds, fn, ...) return keepThread(realTask.delay(seconds, fn, ...)) end,
+	}, { __index = function(_, key) return realTask[key] end })
+	local trackedCoroutine = setmetatable({
+		create = function(fn) return keepThread(realCoroutine.create(fn)) end,
+		wrap = function(fn)
+			local thread = keepThread(realCoroutine.create(fn))
+			return function(...)
+				local result = table.pack(realCoroutine.resume(thread, ...))
+				if not result[1] then error(result[2], 2) end
+				return table.unpack(result, 2, result.n)
+			end
+		end,
+	}, { __index = function(_, key) return realCoroutine[key] end })
+	run.globals = {
+		Instance = trackedInstance, task = trackedTask, coroutine = trackedCoroutine,
+		spawn = function(fn) keepThread(realTask.spawn(fn)) end,
+		delay = function(seconds, fn) keepThread(realTask.delay(seconds, fn)) end,
+	}
+	run.keepThread = keepThread
+	return run
+end
+
+-- Common signals a script connects to. Each is read inside pcall; missing ones are skipped.
+local function commonSignals()
+	local signals = {}
+	local function add(getter)
+		local ok, signal = pcall(getter)
+		if ok and typeof(signal) == "RBXScriptSignal" then table.insert(signals, signal) end
+	end
+	local function service(name)
+		local ok, value = pcall(function() return game:GetService(name) end)
+		return ok and value or nil
+	end
+	local RunService, UserInputService, Players = service("RunService"), service("UserInputService"), service("Players")
+	for _, name in ipairs({ "Heartbeat", "RenderStepped", "Stepped", "PreRender", "PreSimulation", "PostSimulation", "PreAnimation" }) do
+		add(function() return RunService[name] end)
+	end
+	for _, name in ipairs({ "InputBegan", "InputEnded", "InputChanged", "JumpRequest", "TouchTap" }) do
+		add(function() return UserInputService[name] end)
+	end
+	add(function() return Players.PlayerAdded end)
+	add(function() return Players.PlayerRemoving end)
+	add(function() return Players.LocalPlayer.CharacterAdded end)
+	add(function() return Players.LocalPlayer.CharacterRemoving end)
+	add(function() return Players.LocalPlayer.Idled end)
+	add(function() return Players.LocalPlayer.Character.Humanoid.Died end)
+	add(function() return Players.LocalPlayer.Character.Humanoid.StateChanged end)
+	add(function() return workspace.ChildAdded end)
+	add(function() return workspace.DescendantAdded end)
+	add(function() return workspace.DescendantRemoving end)
+	add(function() return game.DescendantAdded end)
+	return signals
+end
+
+local function stopScriptRun(run)
+	local removed = { instances = 0, connections = 0, threads = 0 }
+	local current = coroutine.running()
+	for _, thread in ipairs(run.threads) do
+		if thread ~= current and coroutine.status(thread) ~= "dead" then
+			if pcall(task.cancel, thread) then removed.threads += 1 end
+		end
+	end
+	local getconnections = genv.getconnections
+	if type(getconnections) == "function" and run.env ~= nil then
+		for _, signal in ipairs(commonSignals()) do
+			local ok, list = pcall(getconnections, signal)
+			if ok and type(list) == "table" then
+				for _, connection in ipairs(list) do
+					local okFn, fn = pcall(function() return connection.Function end)
+					if okFn and type(fn) == "function" then
+						local okEnv, env = pcall(getfenv, fn)
+						if okEnv and env == run.env and pcall(function() connection:Disconnect() end) then
+							removed.connections += 1
+						end
+					end
+				end
+			end
+		end
+	end
+	-- Newest first, so children made later go before the parents that hold them.
+	for i = #run.instances, 1, -1 do
+		local instance = run.instances[i]
+		if pcall(function() instance:Destroy() end) then removed.instances += 1 end
+	end
+	run.instances, run.threads, run.status = {}, {}, "stopped"
+	run.stoppedAt = nowIso()
+	return removed
+end
+
+local function scriptRunSummary(run)
+	return {
+		scriptId = run.scriptId, runId = run.runId, status = run.status, startedAt = run.startedAt,
+		stoppedAt = run.stoppedAt, error = run.error, instances = #run.instances, threads = #run.threads,
+	}
+end
+
+OPS.script_status = function()
+	if not CONFIG.allowExec then fail("exec_disabled", "client execution is disabled in this reader") end
+	local runs = {}
+	for _, run in pairs(state.scriptRuns) do table.insert(runs, scriptRunSummary(run)) end
+	return { observedAt = nowIso(), runs = runs }
+end
+
+OPS.script_stop = function(args)
+	if not CONFIG.allowExec then fail("exec_disabled", "client execution is disabled in this reader") end
+	local scriptId = args.scriptId
+	if type(scriptId) ~= "string" or #scriptId < 1 or #scriptId > 128 or not string.match(scriptId, SCRIPT_ID_PATTERN) then
+		fail("bad_script_id", "scriptId must be 1-128 chars of [A-Za-z0-9._-]")
+	end
+	local run = state.scriptRuns[scriptId]
+	if run == nil or run.status == "stopped" then
+		return { observedAt = nowIso(), scriptId = scriptId, stopped = false, notRunning = true }
+	end
+	local removed = stopScriptRun(run)
+	return { observedAt = nowIso(), scriptId = scriptId, runId = run.runId, stopped = true, removed = removed }
+end
 OPS.exec = function(args)
 	if not CONFIG.allowExec then
 		fail(
@@ -2835,7 +2988,21 @@ OPS.exec = function(args)
         if fields~=3 or policy.mode~='owned_ui_v1' or policy.profileId~='rift-owned-ui-v1' or type(policy.nonce)~='string' or not ownedUiEnvironmentAvailable then fail('invalid_owned_ui_policy','Unverified owned UI policy') end
         if source~=OWNED_UI_EXAMPLE_SOURCE then fail('owned_ui_workload_unsupported','Only the exact reviewed factory workload is supported') end
     end
-	-- Recorded before running so a duplicate request can never execute a second time.
+	local track = args.track
+	local trackedId
+	if track ~= nil then
+		if type(track) ~= "table" or type(track.scriptId) ~= "string" or #track.scriptId < 1 or #track.scriptId > 128
+			or not string.match(track.scriptId, SCRIPT_ID_PATTERN) then
+			fail("bad_track", "track.scriptId must be 1-128 chars of [A-Za-z0-9._-]")
+		end
+		if policy ~= nil then fail("bad_track", "tracked scripts cannot use an owned UI policy") end
+		if not execOutputAvailable then fail("script_runtime_unavailable", "this executor does not apply a private chunk environment; tracked runs are unavailable") end
+		local existing = state.scriptRuns[track.scriptId]
+		if existing ~= nil and existing.status == "running" then
+			fail("already_running", "this script is already running; stop or restart it first")
+		end
+		trackedId = track.scriptId
+	end	-- Recorded before running so a duplicate request can never execute a second time.
 	state.execSeen[runId] = true
 	table.insert(state.execOrder, runId)
 	while #state.execOrder > CONFIG.execSeenCap do
@@ -2961,7 +3128,36 @@ OPS.exec = function(args)
 		environment = "no-capture"
 	end
 
-	local packed = table.pack(pcall(chunk))
+	local packed
+	local trackedRun
+	if trackedId ~= nil then
+		if not okEnv then fail("script_runtime_unavailable", "private environment installation failed; source was not executed") end
+		-- A failed earlier run may still own instances or threads; clean those before starting again.
+		local leftover = state.scriptRuns[trackedId]
+		if leftover ~= nil and leftover.status ~= "stopped" then stopScriptRun(leftover) end
+		trackedRun = createScriptRun(trackedId, runId)
+		local env = getfenv(chunk)
+		for key, value in pairs(trackedRun.globals) do rawset(env, key, value) end
+		trackedRun.env = env
+		state.scriptRuns[trackedId] = trackedRun
+		-- Run until the script first yields, then report; loops and waits keep running in the tracked thread.
+		local finished, failure = false, nil
+		local main = trackedRun.keepThread(coroutine.create(function()
+			local ok, err = pcall(chunk)
+			finished = true
+			if not ok then
+				failure = err
+				trackedRun.status = "failed"
+				trackedRun.error = clipExecText(redactExecText(tostring(err)), 4000)
+			end
+		end))
+		local resumed, resumeError = coroutine.resume(main)
+		if not resumed then failure = resumeError; trackedRun.status = "failed"; trackedRun.error = clipExecText(redactExecText(tostring(resumeError)), 4000) end
+		if failure ~= nil then packed = { false, failure, n = 2 } else packed = { true, n = 1 } end
+		trackedRun.finishedMain = finished
+	else
+		packed = table.pack(pcall(chunk))
+	end
 	returned = true
 	local durationMs = math.floor((os.clock() - started) * 1000)
 
@@ -2996,6 +3192,7 @@ OPS.exec = function(args)
 		returnCount = packed.n - 1,
 		returnsTruncated = budget.truncated,
 		capture = environment == "setfenv" and "print+warn" or "none",
+		scriptRun = trackedRun and scriptRunSummary(trackedRun) or nil,
 		durationMs = durationMs,
 		environment = environment,
 	}
