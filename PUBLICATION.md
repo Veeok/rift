@@ -1,5 +1,7 @@
 # Publication boundary
 
+Reader-only update, 21 Nov 2026: template build `d2254dc70f2e` adds a script-run watchdog. A dashboard run whose body and tracked threads have ended reports `completed` when it left nothing tracked behind, or stays running as resident (shown as Active) while it still owns parented instances or connections. Offline script-runtime checks passed 5/5 and related exec, reader and dashboard checks passed 26/26; connection detection still depends on the executor's getconnections.
+
 Reader-only update, 20 Nov 2026: template build `f245419cbc44` is published for the matching local Rift service. The public reader keeps the token placeholder and reads credentials only from local configuration. This does not update the public host or dashboard. Offline reader-output, inspection, and source-contract checks passed 35/35; this is not live Preload acceptance or a claim that Stop cleans up every resource.
 
 Explicit local Rift source export only: no parent repository/history, credentials, raw logs, screenshots or reconstructed game source. Nothing is committed or published by generation.

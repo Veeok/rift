@@ -9,7 +9,7 @@ local CONFIG = {
 	token = "__VOLT_BRIDGE_TOKEN__",
 	protocol = 1,
 	readerVersion = "0.1.0",
-	readerBuild = "f245419cbc44", -- sha256 prefix of this template, stamped by npm run setup
+	readerBuild = "d2254dc70f2e", -- sha256 prefix of this template, stamped by npm run setup
 	connectBackoff = { 1, 2, 5, 10, 20, 30 }, -- seconds between initial-connect attempts
 	giveUpAfterSeconds = 30 * 60, -- stop trying to connect after this long without a bridge
 	-- Unauthenticated this long on one socket => close it and open one new socket. Live test on Volt 1.3.21.2
@@ -2929,17 +2929,66 @@ local function stopScriptRun(run)
 	return removed
 end
 
+-- Connections whose callback belongs to this run, on the same signal list Stop uses.
+-- nil when the executor has no getconnections, so the count is unknown.
+local function countRunConnections(run)
+	local getconnections = genv.getconnections
+	if type(getconnections) ~= "function" or run.env == nil then return nil end
+	local count = 0
+	for _, signal in ipairs(commonSignals()) do
+		local ok, list = pcall(getconnections, signal)
+		if ok and type(list) == "table" then
+			for _, connection in ipairs(list) do
+				local okFn, fn = pcall(function() return connection.Function end)
+				if okFn and type(fn) == "function" then
+					local okEnv, env = pcall(getfenv, fn)
+					if okEnv and env == run.env then count += 1 end
+				end
+			end
+		end
+	end
+	return count
+end
+
+-- Watchdog, evaluated on each status request: a run whose main body and tracked threads
+-- have all ended is "completed" when it left nothing behind, or stays "running" as
+-- resident when it still owns parented instances or connections (event-driven scripts).
+local RESIDENT_RECHECK_SECONDS = 5
+local function refreshScriptRun(run)
+	if run.status ~= "running" or not run.finishedMain then return end
+	for _, thread in ipairs(run.threads) do
+		if coroutine.status(thread) ~= "dead" then run.resident = nil; return end
+	end
+	local now = os.clock()
+	if run.checkedAt ~= nil and now - run.checkedAt < RESIDENT_RECHECK_SECONDS then return end
+	run.checkedAt = now
+	local liveInstances = 0
+	for _, instance in ipairs(run.instances) do
+		local ok, parent = pcall(function() return instance.Parent end)
+		if ok and parent ~= nil then liveInstances += 1 end
+	end
+	local connections = countRunConnections(run)
+	if liveInstances == 0 and (connections or 0) == 0 then
+		run.status, run.resident = "completed", nil
+		run.connectionsUnchecked = connections == nil or nil
+		run.stoppedAt = nowIso()
+	else
+		run.resident = true
+	end
+end
+
 local function scriptRunSummary(run)
 	return {
 		scriptId = run.scriptId, runId = run.runId, status = run.status, startedAt = run.startedAt,
 		stoppedAt = run.stoppedAt, error = run.error, instances = #run.instances, threads = #run.threads,
+		resident = run.resident, connectionsUnchecked = run.connectionsUnchecked,
 	}
 end
 
 OPS.script_status = function()
 	if not CONFIG.allowExec then fail("exec_disabled", "client execution is disabled in this reader") end
 	local runs = {}
-	for _, run in pairs(state.scriptRuns) do table.insert(runs, scriptRunSummary(run)) end
+	for _, run in pairs(state.scriptRuns) do refreshScriptRun(run); table.insert(runs, scriptRunSummary(run)) end
 	return { observedAt = nowIso(), runs = runs }
 end
 
@@ -2950,7 +2999,8 @@ OPS.script_stop = function(args)
 		fail("bad_script_id", "scriptId must be 1-128 chars of [A-Za-z0-9._-]")
 	end
 	local run = state.scriptRuns[scriptId]
-	if run == nil or run.status == "stopped" then
+	if run ~= nil then refreshScriptRun(run) end
+	if run == nil or run.status == "stopped" or run.status == "completed" then
 		return { observedAt = nowIso(), scriptId = scriptId, stopped = false, notRunning = true }
 	end
 	local removed = stopScriptRun(run)
@@ -2998,6 +3048,7 @@ OPS.exec = function(args)
 		if policy ~= nil then fail("bad_track", "tracked scripts cannot use an owned UI policy") end
 		if not execOutputAvailable then fail("script_runtime_unavailable", "this executor does not apply a private chunk environment; tracked runs are unavailable") end
 		local existing = state.scriptRuns[track.scriptId]
+		if existing ~= nil then refreshScriptRun(existing) end
 		if existing ~= nil and existing.status == "running" then
 			fail("already_running", "this script is already running; stop or restart it first")
 		end
@@ -3145,6 +3196,7 @@ OPS.exec = function(args)
 		local main = trackedRun.keepThread(coroutine.create(function()
 			local ok, err = pcall(chunk)
 			finished = true
+			trackedRun.finishedMain = true
 			if not ok then
 				failure = err
 				trackedRun.status = "failed"
